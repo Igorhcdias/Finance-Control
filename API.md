@@ -1,0 +1,155 @@
+# Documentação da API
+
+Base URL local: `http://localhost:3333/api`
+
+Todas as rotas (exceto `/auth/*`) exigem o header:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+## Autenticação
+
+### `POST /auth/register`
+Cadastra um novo usuário.
+
+**Request:**
+```json
+{ "name": "Maria Silva", "email": "maria@email.com", "password": "123456" }
+```
+
+**Response `201 Created`:**
+```json
+{ "token": "eyJhbGciOi...", "user": { "id": "uuid", "name": "Maria Silva", "email": "maria@email.com" } }
+```
+
+**Erros:** `409` e-mail já cadastrado · `422` dados inválidos
+
+---
+
+### `POST /auth/login`
+Autentica um usuário existente.
+
+**Request:**
+```json
+{ "email": "maria@email.com", "password": "123456" }
+```
+
+**Response `200 OK`:** igual ao register.
+
+**Erros:** `401` credenciais inválidas
+
+---
+
+## Categorias
+
+### `POST /categories`
+**Request:** `{ "name": "Alimentação", "color": "#3B82F6" }`
+**Response `201`:** objeto da categoria criada
+**Erros:** `409` nome duplicado · `422` dados inválidos
+
+### `GET /categories`
+**Response `200`:** array de categorias do usuário autenticado
+
+### `PUT /categories/:id`
+**Request:** `{ "name"?: string, "color"?: string }`
+**Response `200`:** categoria atualizada
+**Erros:** `404` não encontrada · `409` nome duplicado
+
+### `DELETE /categories/:id`
+**Response `204 No Content`**
+**Erros:** `404` não encontrada · `409` categoria possui transações vinculadas
+
+---
+
+## Transações (Receitas e Despesas)
+
+### `POST /transactions`
+**Request:**
+```json
+{
+  "description": "Salário",
+  "amount": 5500,
+  "type": "INCOME",
+  "date": "2026-08-05",
+  "categoryId": "uuid-da-categoria"
+}
+```
+**Response `201`:** transação criada (com categoria populada)
+**Erros:** `422` categoria inexistente ou dados inválidos
+
+### `GET /transactions`
+**Query params (todos opcionais):** `type` (`INCOME`|`EXPENSE`), `categoryId`, `search`, `startDate`, `endDate`, `page` (default 1), `pageSize` (default 20, máx 100)
+
+**Response `200`:**
+```json
+{
+  "items": [ { "id": "uuid", "description": "...", "amount": 100.5, "type": "EXPENSE", "category": { "...": "..." } } ],
+  "pagination": { "page": 1, "pageSize": 20, "total": 42, "totalPages": 3 }
+}
+```
+
+### `PUT /transactions/:id`
+**Request:** qualquer subconjunto dos campos de criação
+**Response `200`:** transação atualizada
+**Erros:** `404` não encontrada · `422` categoria inválida
+
+### `DELETE /transactions/:id`
+**Response `204 No Content`**
+**Erros:** `404` não encontrada
+
+---
+
+## Dashboard
+
+### `GET /dashboard/summary`
+**Response `200`:**
+```json
+{
+  "balance": 4200.5,
+  "monthlyIncome": 5500,
+  "monthlyExpense": 2526.4,
+  "monthlyTotal": 2973.6,
+  "recentTransactions": [ /* últimas 5 transações */ ]
+}
+```
+
+### `GET /dashboard/chart`
+**Query params:** `months` (default 6)
+**Response `200`:**
+```json
+[ { "month": "mar. 26", "income": 5000, "expense": 3200 }, "..." ]
+```
+
+---
+
+## Perfil do Usuário
+
+### `GET /users/me`
+**Response `200`:** `{ "id": "uuid", "name": "...", "email": "..." }`
+
+### `PUT /users/me`
+**Request:** `{ "name"?: string, "email"?: string }`
+**Response `200`:** perfil atualizado
+**Erros:** `409` e-mail já em uso
+
+### `PUT /users/me/password`
+**Request:** `{ "currentPassword": "...", "newPassword": "..." }`
+**Response `204 No Content`**
+**Erros:** `401` senha atual incorreta
+
+---
+
+## Códigos HTTP usados no projeto
+
+| Código | Significado no contexto da API |
+|---|---|
+| 200 | Sucesso (GET, PUT) |
+| 201 | Recurso criado (POST) |
+| 204 | Sucesso sem corpo de resposta (DELETE, alteração de senha) |
+| 401 | Não autenticado / credenciais inválidas / token expirado |
+| 404 | Recurso não encontrado ou não pertence ao usuário |
+| 409 | Conflito (e-mail duplicado, nome de categoria duplicado, exclusão bloqueada) |
+| 422 | Dados de entrada inválidos (falha de validação Zod) |
+| 500 | Erro interno não tratado |

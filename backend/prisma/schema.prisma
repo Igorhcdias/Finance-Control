@@ -1,0 +1,66 @@
+// Schema do banco de dados - Sistema de Controle Financeiro Pessoal
+// Modelagem alinhada ao MER definido na Etapa 2
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(150)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  categories   Category[]
+  transactions Transaction[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(50)
+  color     String   @db.VarChar(7)
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // onDelete: Restrict -> impede excluir categoria com transações vinculadas (RN04)
+  transactions Transaction[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("categories")
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  description String          @db.VarChar(255)
+  amount      Decimal         @db.Decimal(12, 2)
+  type        TransactionType
+  date        DateTime        @db.Date
+  userId      String          @map("user_id")
+  categoryId  String          @map("category_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([userId, date])
+  @@index([userId, type])
+  @@index([categoryId])
+  @@map("transactions")
+}
