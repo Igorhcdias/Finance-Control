@@ -11,7 +11,20 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:studio": "prisma studio",
+    "test": "vitest run",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "postinstall": "prisma generate",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:studio": "prisma studio",
     "test": "vitest run"
+    
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
