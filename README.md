@@ -2,8 +2,6 @@
 
 Aplicação Full Stack para controle de finanças pessoais: cadastro/login, dashboard com saldo e gráficos, e CRUD completo de receitas, despesas e categorias.
 
-> **Nota de transparência:** a estrutura, arquitetura e código deste projeto foram gerados com o auxílio de Inteligência Artificial (Claude, da Anthropic), a partir de requisitos e decisões definidos por mim. O código foi revisado, testado e ajustado antes de ser publicado.
-
 Este projeto foi construído como um exemplo de **arquitetura e boas práticas de Engenharia de Software**, não como um sistema complexo. Veja [`ARCHITECTURE.md`](./ARCHITECTURE.md) para a explicação detalhada das decisões técnicas e [`API.md`](./API.md) para a documentação completa das rotas.
 
 ## Stack
