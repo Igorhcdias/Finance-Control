@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Wallet, TrendingUp, TrendingDown, Scale } from 'lucide-react';
 import {
   Bar,
@@ -15,7 +16,13 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { formatCurrency, formatDate } from '../utils/format';
 
 export function DashboardPage() {
-  const { summary, chart, isLoading, error } = useDashboardData();
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  
+  const filterStart = startDate ? new Date(startDate).toISOString() : undefined;
+  const filterEnd = endDate ? new Date(endDate).toISOString() : undefined;
+
+  const { summary, chart, isLoading, error } = useDashboardData(filterStart, filterEnd);
 
   if (isLoading) return <Loading label="Carregando seu dashboard..." />;
 
@@ -25,30 +32,53 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500">Visão geral das suas finanças</p>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500">Visão geral das suas finanças</p>
+        </div>
+        
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 font-medium">De:</label>
+            <input 
+              type="date" 
+              className="rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 px-2 py-1 border"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 font-medium">Até:</label>
+            <input 
+              type="date" 
+              className="rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 px-2 py-1 border"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Saldo atual" value={formatCurrency(summary.balance)} icon={<Wallet size={20} />} tone="neutral" />
-        <MetricCard label="Receitas do mês" value={formatCurrency(summary.monthlyIncome)} icon={<TrendingUp size={20} />} tone="positive" />
-        <MetricCard label="Despesas do mês" value={formatCurrency(summary.monthlyExpense)} icon={<TrendingDown size={20} />} tone="negative" />
+        <MetricCard label="Receitas do período" value={formatCurrency(summary.periodIncome)} icon={<TrendingUp size={20} />} tone="positive" />
+        <MetricCard label="Despesas do período" value={formatCurrency(summary.periodExpense)} icon={<TrendingDown size={20} />} tone="negative" />
         <MetricCard
-          label="Total do mês"
-          value={formatCurrency(summary.monthlyTotal)}
+          label="Total do período"
+          value={formatCurrency(summary.periodTotal)}
           icon={<Scale size={20} />}
-          tone={summary.monthlyTotal >= 0 ? 'positive' : 'negative'}
+          tone={summary.periodTotal >= 0 ? 'positive' : 'negative'}
         />
       </div>
 
       <div className="card">
-        <h2 className="mb-4 text-base font-semibold text-gray-900">Receitas x Despesas (últimos 6 meses)</h2>
+        <h2 className="mb-4 text-base font-semibold text-gray-900">Receitas x Despesas (período selecionado)</h2>
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chart}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9ca3af" />
+              <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#9ca3af" />
               <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
               <Tooltip
                 formatter={(value: number) => formatCurrency(value)}

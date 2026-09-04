@@ -7,7 +7,7 @@ import { dashboardService } from '../services/dashboard.service';
  * loading/erro" da página, seguindo o princípio de que componentes de
  * página devem cuidar de layout, não de orquestração de chamadas assíncronas.
  */
-export function useDashboardData() {
+export function useDashboardData(startDate?: string, endDate?: string) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [chart, setChart] = useState<ChartPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,8 +19,8 @@ export function useDashboardData() {
     async function loadData() {
       try {
         const [summaryData, chartData] = await Promise.all([
-          dashboardService.getSummary(),
-          dashboardService.getChart(),
+          dashboardService.getSummary(startDate, endDate),
+          dashboardService.getChart(startDate, endDate),
         ]);
         if (isMounted) {
           setSummary(summaryData);
@@ -37,7 +37,7 @@ export function useDashboardData() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [startDate, endDate]);
 
   return { summary, chart, isLoading, error };
 }

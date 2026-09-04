@@ -78,9 +78,7 @@ export function LoginPage() {
         </Link>
       </p>
 
-      <p className="mt-4 rounded-lg bg-gray-50 p-3 text-center text-xs text-gray-500">
-        Conta demo: <strong>demo@financecontrol.com</strong> / senha <strong>123456</strong>
-      </p>
+
     </AuthLayout>
   );
 }

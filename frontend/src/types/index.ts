@@ -39,14 +39,14 @@ export interface PaginatedResponse<T> {
 
 export interface DashboardSummary {
   balance: number;
-  monthlyIncome: number;
-  monthlyExpense: number;
-  monthlyTotal: number;
+  periodIncome: number;
+  periodExpense: number;
+  periodTotal: number;
   recentTransactions: Transaction[];
 }
 
 export interface ChartPoint {
-  month: string;
+  label: string;
   income: number;
   expense: number;
 }
