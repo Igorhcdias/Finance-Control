@@ -6,13 +6,18 @@ const dashboardService = new DashboardService(new TransactionRepository());
 
 export class DashboardController {
   async summary(req: Request, res: Response) {
-    const summary = await dashboardService.getSummary(req.user!.id);
+    const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+    
+    const summary = await dashboardService.getSummary(req.user!.id, startDate, endDate);
     res.status(200).json(summary);
   }
 
   async chart(req: Request, res: Response) {
-    const months = req.query.months ? Number(req.query.months) : 6;
-    const chart = await dashboardService.getChartData(req.user!.id, months);
+    const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+    const chart = await dashboardService.getChartData(req.user!.id, startDate, endDate);
     res.status(200).json(chart);
   }
 }
