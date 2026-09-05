@@ -77,6 +77,14 @@ export interface ITransactionFilters {
   pageSize?: number;
 }
 
+export interface ICategoryExpense {
+  categoryId: string;
+  categoryName: string;
+  categoryColor: string;
+  amount: number;
+  percentage: number;
+}
+
 export interface ITransactionRepository {
   create(data: ICreateTransactionData): Promise<Transaction>;
   findById(id: string, userId: string): Promise<Transaction | null>;
@@ -87,6 +95,8 @@ export interface ITransactionRepository {
   update(id: string, data: IUpdateTransactionData): Promise<Transaction>;
   delete(id: string): Promise<void>;
   sumByType(userId: string, type: TransactionType, startDate: Date, endDate: Date): Promise<number>;
+  sumExpensesByCategory(userId: string, startDate: Date, endDate: Date): Promise<ICategoryExpense[]>;
   findRecentByUser(userId: string, limit: number): Promise<Transaction[]>;
   findAllForPeriod(userId: string, startDate: Date, endDate: Date): Promise<Transaction[]>;
 }
+

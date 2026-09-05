@@ -108,10 +108,19 @@ Autentica um usuário existente.
 ```json
 {
   "balance": 4200.5,
-  "monthlyIncome": 5500,
-  "monthlyExpense": 2526.4,
-  "monthlyTotal": 2973.6,
-  "recentTransactions": [ /* últimas 5 transações */ ]
+  "periodIncome": 5500,
+  "periodExpense": 2526.4,
+  "periodTotal": 2973.6,
+  "recentTransactions": [ /* últimas 5 transações */ ],
+  "expensesByCategory": [
+    {
+      "categoryId": "uuid",
+      "categoryName": "Alimentação",
+      "categoryColor": "#ef4444",
+      "amount": 450.0,
+      "percentage": 17.8
+    }
+  ]
 }
 ```
 

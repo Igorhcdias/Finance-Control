@@ -1,6 +1,7 @@
 import { Prisma, TransactionType } from '@prisma/client';
 import { prisma } from '../config/prisma';
 import {
+  ICategoryExpense,
   ICreateTransactionData,
   ITransactionFilters,
   ITransactionRepository,
@@ -64,6 +65,54 @@ export class TransactionRepository implements ITransactionRepository {
       _sum: { amount: true },
     });
     return Number(result._sum.amount ?? 0);
+  }
+
+  async sumExpensesByCategory(
+    userId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<ICategoryExpense[]> {
+    const grouped = await prisma.transaction.groupBy({
+      by: ['categoryId'],
+      where: {
+        userId,
+        type: TransactionType.EXPENSE,
+        date: { gte: startDate, lte: endDate },
+      },
+      _sum: {
+        amount: true,
+      },
+      orderBy: {
+        _sum: {
+          amount: 'desc',
+        },
+      },
+    });
+
+    if (grouped.length === 0) return [];
+
+    const categories = await prisma.category.findMany({
+      where: {
+        id: { in: grouped.map((g) => g.categoryId) },
+      },
+    });
+
+    const categoryMap = new Map(categories.map((c) => [c.id, c]));
+    const totalExpense = grouped.reduce((acc, g) => acc + Number(g._sum.amount ?? 0), 0);
+
+    return grouped.map((g) => {
+      const category = categoryMap.get(g.categoryId);
+      const amount = Number(g._sum.amount ?? 0);
+      const percentage = totalExpense > 0 ? (amount / totalExpense) * 100 : 0;
+
+      return {
+        categoryId: g.categoryId,
+        categoryName: category?.name ?? 'Outros',
+        categoryColor: category?.color ?? '#9ca3af',
+        amount,
+        percentage: Number(percentage.toFixed(1)),
+      };
+    });
   }
 
   async findRecentByUser(userId: string, limit: number) {

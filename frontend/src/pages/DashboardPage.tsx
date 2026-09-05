@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Wallet, TrendingUp, TrendingDown, Scale } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Scale, PieChart } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -93,6 +93,63 @@ export function DashboardPage() {
       </div>
 
       <div className="card">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <PieChart className="text-primary-600" size={20} />
+            <h2 className="text-base font-semibold text-gray-900">Gastos por categoria</h2>
+          </div>
+          {summary.expensesByCategory && summary.expensesByCategory.length > 0 && (
+            <span className="text-xs font-medium text-gray-500 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-full">
+              Total: {formatCurrency(summary.periodExpense)}
+            </span>
+          )}
+        </div>
+
+        {!summary.expensesByCategory || summary.expensesByCategory.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 mb-2">
+              <PieChart size={24} />
+            </div>
+            <p className="text-sm font-medium text-gray-600">Nenhum gasto registrado neste período</p>
+            <p className="text-xs text-gray-400 mt-1">As despesas adicionadas com categorias aparecerão aqui.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {summary.expensesByCategory.map((cat) => (
+              <div key={cat.categoryId} className="group rounded-lg p-2.5 transition-colors hover:bg-gray-50">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="h-3.5 w-3.5 rounded-full ring-2 ring-white shadow-sm flex-shrink-0"
+                      style={{ backgroundColor: cat.categoryColor }}
+                    />
+                    <span className="font-medium text-gray-800">{cat.categoryName}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-gray-900">{formatCurrency(cat.amount)}</span>
+                    <span className="inline-block w-14 text-right text-xs font-medium text-gray-500">
+                      {cat.percentage}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Barra de progresso proporcional */}
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    className="h-full rounded-full transition-all duration-500 ease-out"
+                    style={{
+                      width: `${Math.min(cat.percentage, 100)}%`,
+                      backgroundColor: cat.categoryColor,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="card">
         <h2 className="mb-4 text-base font-semibold text-gray-900">Últimas movimentações</h2>
         {summary.recentTransactions.length === 0 ? (
           <p className="py-6 text-center text-sm text-gray-500">Nenhuma movimentação registrada ainda.</p>
@@ -136,4 +193,4 @@ export function DashboardPage() {
       </div>
     </div>
   );
-}
+  }
