@@ -37,12 +37,21 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface CategoryExpense {
+  categoryId: string;
+  categoryName: string;
+  categoryColor: string;
+  amount: number;
+  percentage: number;
+}
+
 export interface DashboardSummary {
   balance: number;
   periodIncome: number;
   periodExpense: number;
   periodTotal: number;
   recentTransactions: Transaction[];
+  expensesByCategory: CategoryExpense[];
 }
 
 export interface ChartPoint {
