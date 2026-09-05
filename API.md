@@ -142,6 +142,30 @@ Autentica um usuário existente.
 [ { "month": "mar. 26", "income": 5000, "expense": 3200 }, "..." ]
 ```
 
+### `GET /dashboard/monthly-comparison`
+Compara despesas entre dois meses específicos.
+**Query params (opcionais):** `month1` (`YYYY-MM`), `month2` (`YYYY-MM`). Se omitidos, compara mês atual vs mês anterior.
+**Response `200`:**
+```json
+{
+  "month1": { "yearMonth": "2026-08", "label": "Agosto de 2026", "totalExpense": 2500.0 },
+  "month2": { "yearMonth": "2026-07", "label": "Julho de 2026", "totalExpense": 2800.0 },
+  "difference": -300.0,
+  "percentageChange": -10.7,
+  "categories": [
+    {
+      "categoryId": "uuid",
+      "categoryName": "Alimentação",
+      "categoryColor": "#ef4444",
+      "month1Amount": 600.0,
+      "month2Amount": 750.0,
+      "difference": -150.0,
+      "percentageChange": -20.0
+    }
+  ]
+}
+```
+
 ---
 
 ## Perfil do Usuário

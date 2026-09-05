@@ -1,5 +1,9 @@
 import { TransactionType } from '@prisma/client';
-import { ITransactionRepository } from '../interfaces/repositories';
+import {
+  ICategoryComparisonItem,
+  IMonthlyComparison,
+  ITransactionRepository,
+} from '../interfaces/repositories';
 
 /**
  * Service dedicado ao Dashboard (RF04, RF05, RF06).
@@ -103,6 +107,104 @@ export class DashboardService {
       income: data.income,
       expense: data.expense
     }));
+  }
+
+  async compareMonths(
+    userId: string,
+    month1Str?: string,
+    month2Str?: string
+  ): Promise<IMonthlyComparison> {
+    const parseMonth = (str?: string, defaultOffsetMonths: number = 0) => {
+      if (str && /^\d{4}-\d{2}$/.test(str)) {
+        const [y, m] = str.split('-').map(Number);
+        const start = new Date(y, m - 1, 1, 0, 0, 0, 0);
+        const end = new Date(y, m, 0, 23, 59, 59, 999);
+        return { year: y, month: m - 1, start, end, yearMonth: str };
+      }
+      const now = new Date();
+      const targetDate = new Date(now.getFullYear(), now.getMonth() - defaultOffsetMonths, 1);
+      const y = targetDate.getFullYear();
+      const m = targetDate.getMonth();
+      const start = new Date(y, m, 1, 0, 0, 0, 0);
+      const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
+      const yearMonth = `${y}-${String(m + 1).padStart(2, '0')}`;
+      return { year: y, month: m, start, end, yearMonth };
+    };
+
+    const m1 = parseMonth(month1Str, 0);
+    const m2 = parseMonth(month2Str, 1);
+
+    const [totalExpense1, totalExpense2, categories1, categories2] = await Promise.all([
+      this.transactionRepository.sumByType(userId, TransactionType.EXPENSE, m1.start, m1.end),
+      this.transactionRepository.sumByType(userId, TransactionType.EXPENSE, m2.start, m2.end),
+      this.transactionRepository.sumExpensesByCategory(userId, m1.start, m1.end),
+      this.transactionRepository.sumExpensesByCategory(userId, m2.start, m2.end),
+    ]);
+
+    const formatLabel = (date: Date) => {
+      const formatted = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+    };
+
+    const categoryMap = new Map<string, ICategoryComparisonItem>();
+
+    for (const c of categories1) {
+      categoryMap.set(c.categoryId, {
+        categoryId: c.categoryId,
+        categoryName: c.categoryName,
+        categoryColor: c.categoryColor,
+        month1Amount: c.amount,
+        month2Amount: 0,
+        difference: c.amount,
+        percentageChange: 100,
+      });
+    }
+
+    for (const c of categories2) {
+      const existing = categoryMap.get(c.categoryId);
+      if (existing) {
+        existing.month2Amount = c.amount;
+        existing.difference = existing.month1Amount - c.amount;
+        existing.percentageChange = c.amount > 0
+          ? Number((((existing.month1Amount - c.amount) / c.amount) * 100).toFixed(1))
+          : 100;
+      } else {
+        categoryMap.set(c.categoryId, {
+          categoryId: c.categoryId,
+          categoryName: c.categoryName,
+          categoryColor: c.categoryColor,
+          month1Amount: 0,
+          month2Amount: c.amount,
+          difference: -c.amount,
+          percentageChange: -100,
+        });
+      }
+    }
+
+    const categories = Array.from(categoryMap.values()).sort(
+      (a, b) => Math.max(b.month1Amount, b.month2Amount) - Math.max(a.month1Amount, a.month2Amount)
+    );
+
+    const difference = totalExpense1 - totalExpense2;
+    const percentageChange = totalExpense2 > 0
+      ? Number((((totalExpense1 - totalExpense2) / totalExpense2) * 100).toFixed(1))
+      : (totalExpense1 > 0 ? 100 : 0);
+
+    return {
+      month1: {
+        yearMonth: m1.yearMonth,
+        label: formatLabel(m1.start),
+        totalExpense: totalExpense1,
+      },
+      month2: {
+        yearMonth: m2.yearMonth,
+        label: formatLabel(m2.start),
+        totalExpense: totalExpense2,
+      },
+      difference,
+      percentageChange,
+      categories,
+    };
   }
 
   private async sumAllTime(userId: string, type: TransactionType) {

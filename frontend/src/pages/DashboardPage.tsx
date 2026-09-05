@@ -12,6 +12,7 @@ import {
   YAxis,
 } from 'recharts';
 import { MetricCard } from '../components/MetricCard';
+import { MonthlyComparisonCard } from '../components/MonthlyComparisonCard';
 import { Loading } from '../components/Loading';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { formatCurrency, formatDate } from '../utils/format';
@@ -145,6 +146,8 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <MonthlyComparisonCard />
 
       <div className="card">
         <div className="mb-4 flex items-center justify-between">

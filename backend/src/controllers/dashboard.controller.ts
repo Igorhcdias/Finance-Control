@@ -20,4 +20,12 @@ export class DashboardController {
     const chart = await dashboardService.getChartData(req.user!.id, startDate, endDate);
     res.status(200).json(chart);
   }
+
+  async monthlyComparison(req: Request, res: Response) {
+    const month1 = req.query.month1 as string | undefined;
+    const month2 = req.query.month2 as string | undefined;
+
+    const comparison = await dashboardService.compareMonths(req.user!.id, month1, month2);
+    res.status(200).json(comparison);
+  }
 }

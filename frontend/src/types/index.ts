@@ -75,3 +75,29 @@ export interface ChartPoint {
 export interface ApiErrorResponse {
   message: string;
 }
+
+export interface CategoryComparisonItem {
+  categoryId: string;
+  categoryName: string;
+  categoryColor: string;
+  month1Amount: number;
+  month2Amount: number;
+  difference: number;
+  percentageChange: number;
+}
+
+export interface MonthlyComparisonData {
+  month1: {
+    yearMonth: string;
+    label: string;
+    totalExpense: number;
+  };
+  month2: {
+    yearMonth: string;
+    label: string;
+    totalExpense: number;
+  };
+  difference: number;
+  percentageChange: number;
+  categories: CategoryComparisonItem[];
+}

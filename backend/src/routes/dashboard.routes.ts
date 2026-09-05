@@ -10,5 +10,6 @@ router.use(authMiddleware);
 
 router.get('/summary', asyncHandler(controller.summary));
 router.get('/chart', asyncHandler(controller.chart));
+router.get('/monthly-comparison', asyncHandler(controller.monthlyComparison));
 
 export default router;

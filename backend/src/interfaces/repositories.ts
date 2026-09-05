@@ -97,6 +97,32 @@ export interface ICategoryBudgetProgress {
   status: 'normal' | 'warning' | 'exceeded';
 }
 
+export interface ICategoryComparisonItem {
+  categoryId: string;
+  categoryName: string;
+  categoryColor: string;
+  month1Amount: number;
+  month2Amount: number;
+  difference: number;
+  percentageChange: number;
+}
+
+export interface IMonthlyComparison {
+  month1: {
+    yearMonth: string;
+    label: string;
+    totalExpense: number;
+  };
+  month2: {
+    yearMonth: string;
+    label: string;
+    totalExpense: number;
+  };
+  difference: number;
+  percentageChange: number;
+  categories: ICategoryComparisonItem[];
+}
+
 export interface ITransactionRepository {
   create(data: ICreateTransactionData): Promise<Transaction>;
   findById(id: string, userId: string): Promise<Transaction | null>;
