@@ -5,12 +5,35 @@ import { useEffect } from 'react';
 import { Modal } from './Modal';
 import { Category } from '../types';
 
-const categoryFormSchema = z.object({
-  name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres').max(50),
-  color: z.string().regex(/^#([0-9A-Fa-f]{6})$/, 'Escolha uma cor'),
-});
+const categoryFormSchema = z
+  .object({
+    name: z.string().trim().min(2, 'Nome deve ter no mínimo 2 caracteres').max(50),
+    color: z.string().regex(/^#([0-9A-Fa-f]{6})$/, 'Escolha uma cor'),
+    hasBudgetLimit: z.boolean().default(false),
+    budgetLimit: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.hasBudgetLimit) {
+        if (!data.budgetLimit || data.budgetLimit.trim() === '') return false;
+        const num = Number(data.budgetLimit.replace(',', '.'));
+        return !isNaN(num) && num > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Informe um valor limite válido maior que zero',
+      path: ['budgetLimit'],
+    }
+  );
 
-export type CategoryFormData = z.infer<typeof categoryFormSchema>;
+type CategoryFormValues = z.infer<typeof categoryFormSchema>;
+
+export interface CategoryFormData {
+  name: string;
+  color: string;
+  budgetLimit?: number | null;
+}
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -29,21 +52,44 @@ export function CategoryFormModal({ isOpen, category, onClose, onSubmit }: Categ
     setValue,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<CategoryFormData>({
+  } = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
-    defaultValues: { name: '', color: suggestedColors[0] },
+    defaultValues: { name: '', color: suggestedColors[0], hasBudgetLimit: false, budgetLimit: '' },
   });
 
   useEffect(() => {
     if (isOpen) {
-      reset({ name: category?.name ?? '', color: category?.color ?? suggestedColors[0] });
+      const hasLimit =
+        category?.budgetLimit !== null &&
+        category?.budgetLimit !== undefined &&
+        Number(category.budgetLimit) > 0;
+
+      reset({
+        name: category?.name ?? '',
+        color: category?.color ?? suggestedColors[0],
+        hasBudgetLimit: hasLimit,
+        budgetLimit: hasLimit ? String(Number(category!.budgetLimit)) : '',
+      });
     }
   }, [isOpen, category, reset]);
 
   const selectedColor = watch('color');
+  const hasBudgetLimit = watch('hasBudgetLimit');
 
-  async function handleFormSubmit(data: CategoryFormData) {
-    await onSubmit(data);
+  async function handleFormSubmit(data: CategoryFormValues) {
+    let budgetLimit: number | null = null;
+    if (data.hasBudgetLimit && data.budgetLimit) {
+      const num = Number(data.budgetLimit.replace(',', '.'));
+      if (!isNaN(num) && num > 0) {
+        budgetLimit = num;
+      }
+    }
+
+    await onSubmit({
+      name: data.name,
+      color: data.color,
+      budgetLimit,
+    });
     onClose();
   }
 
@@ -56,7 +102,7 @@ export function CategoryFormModal({ isOpen, category, onClose, onSubmit }: Categ
           {errors.name && <p className="error-text">{errors.name.message}</p>}
         </div>
 
-        <div className="mb-6">
+        <div className="mb-5">
           <label className="label-field">Cor</label>
           <div className="flex flex-wrap gap-2">
             {suggestedColors.map((color) => (
@@ -75,6 +121,46 @@ export function CategoryFormModal({ isOpen, category, onClose, onSubmit }: Categ
           {errors.color && <p className="error-text">{errors.color.message}</p>}
         </div>
 
+        <div className="mb-6 rounded-lg border border-gray-100 bg-gray-50/70 p-3.5">
+          <div className="flex items-center gap-2.5">
+            <input
+              type="checkbox"
+              id="has-budget-limit"
+              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+              {...register('hasBudgetLimit')}
+            />
+            <label htmlFor="has-budget-limit" className="text-sm font-medium text-gray-700 cursor-pointer select-none">
+              Definir limite de orçamento mensal para esta categoria
+            </label>
+          </div>
+
+          {hasBudgetLimit && (
+            <div className="mt-3 pt-3 border-t border-gray-200/60">
+              <label className="label-field" htmlFor="category-budget-limit">
+                Limite mensal (R$)
+              </label>
+              <div className="relative mt-1">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-gray-500 font-medium">
+                  R$
+                </span>
+                <input
+                  id="category-budget-limit"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  className="input-field pl-10"
+                  placeholder="0,00"
+                  {...register('budgetLimit')}
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Você pode ajustar esse limite a qualquer momento caso seus custos variem de mês a mês.
+              </p>
+              {errors.budgetLimit && <p className="error-text">{errors.budgetLimit.message}</p>}
+            </div>
+          )}
+        </div>
+
         <div className="flex justify-end gap-3">
           <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
           <button type="submit" disabled={isSubmitting} className="btn-primary">
@@ -85,3 +171,4 @@ export function CategoryFormModal({ isOpen, category, onClose, onSubmit }: Categ
     </Modal>
   );
 }
+

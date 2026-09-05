@@ -32,12 +32,14 @@ export interface IUserRepository {
 export interface ICreateCategoryData {
   name: string;
   color: string;
+  budgetLimit?: number | null;
   userId: string;
 }
 
 export interface IUpdateCategoryData {
   name?: string;
   color?: string;
+  budgetLimit?: number | null;
 }
 
 export interface ICategoryRepository {
@@ -85,6 +87,42 @@ export interface ICategoryExpense {
   percentage: number;
 }
 
+export interface ICategoryBudgetProgress {
+  categoryId: string;
+  categoryName: string;
+  categoryColor: string;
+  budgetLimit: number;
+  amountSpent: number;
+  spentPercentage: number;
+  status: 'normal' | 'warning' | 'exceeded';
+}
+
+export interface ICategoryComparisonItem {
+  categoryId: string;
+  categoryName: string;
+  categoryColor: string;
+  month1Amount: number;
+  month2Amount: number;
+  difference: number;
+  percentageChange: number;
+}
+
+export interface IMonthlyComparison {
+  month1: {
+    yearMonth: string;
+    label: string;
+    totalExpense: number;
+  };
+  month2: {
+    yearMonth: string;
+    label: string;
+    totalExpense: number;
+  };
+  difference: number;
+  percentageChange: number;
+  categories: ICategoryComparisonItem[];
+}
+
 export interface ITransactionRepository {
   create(data: ICreateTransactionData): Promise<Transaction>;
   findById(id: string, userId: string): Promise<Transaction | null>;
@@ -96,6 +134,7 @@ export interface ITransactionRepository {
   delete(id: string): Promise<void>;
   sumByType(userId: string, type: TransactionType, startDate: Date, endDate: Date): Promise<number>;
   sumExpensesByCategory(userId: string, startDate: Date, endDate: Date): Promise<ICategoryExpense[]>;
+  getBudgetProgress(userId: string, startDate: Date, endDate: Date): Promise<ICategoryBudgetProgress[]>;
   findRecentByUser(userId: string, limit: number): Promise<Transaction[]>;
   findAllForPeriod(userId: string, startDate: Date, endDate: Date): Promise<Transaction[]>;
 }

@@ -7,6 +7,7 @@ import { Loading } from '../components/Loading';
 import { Category } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { getApiErrorMessage } from '../services/api';
+import { formatCurrency } from '../utils/format';
 
 export function CategoriesPage() {
   const { categories, isLoading, createCategory, updateCategory, deleteCategory } = useCategories();
@@ -73,26 +74,42 @@ export function CategoriesPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => (
-            <div key={category.id} className="card flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: category.color }} />
-                <span className="font-medium text-gray-800">{category.name}</span>
+            <div key={category.id} className="card flex flex-col justify-between gap-3 p-4 transition-all hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className="h-3.5 w-3.5 rounded-full ring-2 ring-white shadow-sm flex-shrink-0"
+                    style={{ backgroundColor: category.color }}
+                  />
+                  <span className="font-semibold text-gray-900 text-base">{category.name}</span>
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => openEditForm(category)}
+                    aria-label={`Editar ${category.name}`}
+                    className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-primary-600 transition-colors"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    onClick={() => setCategoryToDelete(category)}
+                    aria-label={`Excluir ${category.name}`}
+                    className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => openEditForm(category)}
-                  aria-label={`Editar ${category.name}`}
-                  className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-primary-600"
-                >
-                  <Pencil size={16} />
-                </button>
-                <button
-                  onClick={() => setCategoryToDelete(category)}
-                  aria-label={`Excluir ${category.name}`}
-                  className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                >
-                  <Trash2 size={16} />
-                </button>
+
+              <div className="flex items-center justify-between pt-2.5 border-t border-gray-100 text-xs">
+                <span className="text-gray-500 font-medium">Orçamento mensal:</span>
+                {category.budgetLimit && Number(category.budgetLimit) > 0 ? (
+                  <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                    {formatCurrency(Number(category.budgetLimit))}
+                  </span>
+                ) : (
+                  <span className="text-gray-400 italic">Sem limite</span>
+                )}
               </div>
             </div>
           ))}

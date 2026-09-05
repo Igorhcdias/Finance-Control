@@ -4,6 +4,7 @@ import { Category } from '../types';
 export interface CategoryInput {
   name: string;
   color: string;
+  budgetLimit?: number | null;
 }
 
 export const categoryService = {

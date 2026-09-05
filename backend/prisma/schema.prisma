@@ -30,11 +30,12 @@ model User {
 }
 
 model Category {
-  id        String   @id @default(uuid())
-  name      String   @db.VarChar(50)
-  color     String   @db.VarChar(7)
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(50)
+  color       String   @db.VarChar(7)
+  budgetLimit Decimal? @map("budget_limit") @db.Decimal(12, 2)
+  userId      String   @map("user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   // onDelete: Restrict -> impede excluir categoria com transações vinculadas (RN04)

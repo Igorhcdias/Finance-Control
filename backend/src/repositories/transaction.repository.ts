@@ -1,6 +1,7 @@
 import { Prisma, TransactionType } from '@prisma/client';
 import { prisma } from '../config/prisma';
 import {
+  ICategoryBudgetProgress,
   ICategoryExpense,
   ICreateTransactionData,
   ITransactionFilters,
@@ -111,6 +112,64 @@ export class TransactionRepository implements ITransactionRepository {
         categoryColor: category?.color ?? '#9ca3af',
         amount,
         percentage: Number(percentage.toFixed(1)),
+      };
+    });
+  }
+
+  async getBudgetProgress(
+    userId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<ICategoryBudgetProgress[]> {
+    const categoriesWithBudget = await prisma.category.findMany({
+      where: {
+        userId,
+        budgetLimit: { not: null },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    if (categoriesWithBudget.length === 0) return [];
+
+    const categoryIds = categoriesWithBudget.map((c) => c.id);
+    const expenses = await prisma.transaction.groupBy({
+      by: ['categoryId'],
+      where: {
+        userId,
+        type: TransactionType.EXPENSE,
+        categoryId: { in: categoryIds },
+        date: { gte: startDate, lte: endDate },
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    const expenseMap = new Map<string, number>();
+    for (const exp of expenses) {
+      expenseMap.set(exp.categoryId, Number(exp._sum.amount ?? 0));
+    }
+
+    return categoriesWithBudget.map((category) => {
+      const budgetLimit = Number(category.budgetLimit);
+      const amountSpent = expenseMap.get(category.id) ?? 0;
+      const spentPercentage = budgetLimit > 0 ? Number(((amountSpent / budgetLimit) * 100).toFixed(1)) : 0;
+
+      let status: 'normal' | 'warning' | 'exceeded' = 'normal';
+      if (spentPercentage >= 100) {
+        status = 'exceeded';
+      } else if (spentPercentage >= 80) {
+        status = 'warning';
+      }
+
+      return {
+        categoryId: category.id,
+        categoryName: category.name,
+        categoryColor: category.color,
+        budgetLimit,
+        amountSpent,
+        spentPercentage,
+        status,
       };
     });
   }

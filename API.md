@@ -45,7 +45,7 @@ Autentica um usuário existente.
 ## Categorias
 
 ### `POST /categories`
-**Request:** `{ "name": "Alimentação", "color": "#3B82F6" }`
+**Request:** `{ "name": "Alimentação", "color": "#3B82F6", "budgetLimit"?: 800.00 }`
 **Response `201`:** objeto da categoria criada
 **Erros:** `409` nome duplicado · `422` dados inválidos
 
@@ -53,7 +53,7 @@ Autentica um usuário existente.
 **Response `200`:** array de categorias do usuário autenticado
 
 ### `PUT /categories/:id`
-**Request:** `{ "name"?: string, "color"?: string }`
+**Request:** `{ "name"?: string, "color"?: string, "budgetLimit"?: 800.00 | null }`
 **Response `200`:** categoria atualizada
 **Erros:** `404` não encontrada · `409` nome duplicado
 
@@ -120,6 +120,17 @@ Autentica um usuário existente.
       "amount": 450.0,
       "percentage": 17.8
     }
+  ],
+  "budgetProgress": [
+    {
+      "categoryId": "uuid",
+      "categoryName": "Alimentação",
+      "categoryColor": "#ef4444",
+      "budgetLimit": 500.0,
+      "amountSpent": 450.0,
+      "spentPercentage": 90.0,
+      "status": "warning"
+    }
   ]
 }
 ```
@@ -129,6 +140,30 @@ Autentica um usuário existente.
 **Response `200`:**
 ```json
 [ { "month": "mar. 26", "income": 5000, "expense": 3200 }, "..." ]
+```
+
+### `GET /dashboard/monthly-comparison`
+Compara despesas entre dois meses específicos.
+**Query params (opcionais):** `month1` (`YYYY-MM`), `month2` (`YYYY-MM`). Se omitidos, compara mês atual vs mês anterior.
+**Response `200`:**
+```json
+{
+  "month1": { "yearMonth": "2026-08", "label": "Agosto de 2026", "totalExpense": 2500.0 },
+  "month2": { "yearMonth": "2026-07", "label": "Julho de 2026", "totalExpense": 2800.0 },
+  "difference": -300.0,
+  "percentageChange": -10.7,
+  "categories": [
+    {
+      "categoryId": "uuid",
+      "categoryName": "Alimentação",
+      "categoryColor": "#ef4444",
+      "month1Amount": 600.0,
+      "month2Amount": 750.0,
+      "difference": -150.0,
+      "percentageChange": -20.0
+    }
+  ]
+}
 ```
 
 ---
