@@ -73,23 +73,76 @@ export function DashboardPage() {
         />
       </div>
 
-      <div className="card">
-        <h2 className="mb-4 text-base font-semibold text-gray-900">Receitas x Despesas (período selecionado)</h2>
-        <div className="h-72 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chart}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#9ca3af" />
-              <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
-              <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
-                contentStyle={{ borderRadius: 8, borderColor: '#e5e7eb', fontSize: 13 }}
-              />
-              <Legend />
-              <Bar dataKey="income" name="Receitas" fill="#2563eb" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expense" name="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* Gráficos lado a lado */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="card">
+          <h2 className="mb-4 text-base font-semibold text-gray-900">Receitas x Despesas (período selecionado)</h2>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chart}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                <Tooltip
+                  formatter={(value: number) => formatCurrency(value)}
+                  contentStyle={{ borderRadius: 8, borderColor: '#e5e7eb', fontSize: 13 }}
+                />
+                <Legend />
+                <Bar dataKey="income" name="Receitas" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expense" name="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="mb-4">
+            <h2 className="text-base font-semibold text-gray-900">Gastos por categoria</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Visão gráfica para identificar onde o dinheiro está sendo gasto</p>
+          </div>
+          <div className="h-72 w-full">
+            {!summary.expensesByCategory || summary.expensesByCategory.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center text-center">
+                <p className="text-sm font-medium text-gray-500">Nenhuma despesa registrada no período</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  layout="vertical"
+                  data={summary.expensesByCategory}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+                  <XAxis
+                    type="number"
+                    tickFormatter={(value: number) => {
+                      if (value >= 1000) return `R$ ${(value / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+                      return `R$ ${value}`;
+                    }}
+                    tick={{ fontSize: 11 }}
+                    stroke="#9ca3af"
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="categoryName"
+                    tick={{ fontSize: 12, fill: '#374151' }}
+                    stroke="#9ca3af"
+                    width={95}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [formatCurrency(value), 'Gasto']}
+                    contentStyle={{ borderRadius: 8, borderColor: '#e5e7eb', fontSize: 13 }}
+                  />
+                  <Bar
+                    dataKey="amount"
+                    name="Gastos"
+                    fill="#1d4ed8"
+                    radius={[0, 6, 6, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </div>
       </div>
 
