@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Wallet, TrendingUp, TrendingDown, Scale, PieChart } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Wallet, TrendingUp, TrendingDown, Scale, PieChart, Target } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -145,6 +146,117 @@ export function DashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Acompanhamento de Orçamento */}
+      <div className="card">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Target className="text-primary-600" size={20} />
+            <h2 className="text-base font-semibold text-gray-900">Acompanhamento de Orçamento por Categoria</h2>
+          </div>
+          {summary.budgetProgress && summary.budgetProgress.length > 0 && (
+            <span className="text-xs font-medium text-gray-500 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-full">
+              {summary.budgetProgress.length} categoria{summary.budgetProgress.length > 1 ? 's' : ''} com meta
+            </span>
+          )}
+        </div>
+
+        {/* Legenda dos indicadores de cor conforme padrão */}
+        <div className="mb-5 flex flex-wrap items-center gap-4 sm:gap-6 rounded-lg bg-gray-900 text-white px-3.5 py-2.5 text-xs shadow-sm">
+          <div className="flex items-center gap-2 font-medium">
+            <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-sm" />
+            <span>0–79% → normal</span>
+          </div>
+          <div className="flex items-center gap-2 font-medium">
+            <span className="h-3 w-3 rounded-full bg-amber-400 shadow-sm" />
+            <span>80–99% → próximo do limite</span>
+          </div>
+          <div className="flex items-center gap-2 font-medium">
+            <span className="h-3 w-3 rounded-full bg-red-500 shadow-sm" />
+            <span>100%+ → orçamento ultrapassado</span>
+          </div>
+        </div>
+
+        {!summary.budgetProgress || summary.budgetProgress.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 mb-2">
+              <Target size={24} />
+            </div>
+            <p className="text-sm font-medium text-gray-600">Nenhum limite de orçamento configurado</p>
+            <p className="text-xs text-gray-400 mt-1 mb-3">
+              Defina limites mensais para suas categorias para acompanhar o consumo do orçamento aqui.
+            </p>
+            <Link to="/categories" className="btn-secondary text-xs py-1.5 px-3">
+              Configurar categorias
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {summary.budgetProgress.map((item) => {
+              const statusConfig = {
+                normal: {
+                  dot: 'bg-emerald-500 ring-emerald-100',
+                  badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                  bar: 'bg-emerald-500',
+                  label: 'Normal',
+                },
+                warning: {
+                  dot: 'bg-amber-400 ring-amber-100',
+                  badge: 'bg-amber-50 text-amber-700 border-amber-200',
+                  bar: 'bg-amber-400',
+                  label: 'Próximo do limite',
+                },
+                exceeded: {
+                  dot: 'bg-red-500 ring-red-100',
+                  badge: 'bg-red-50 text-red-700 border-red-200',
+                  bar: 'bg-red-500',
+                  label: 'Orçamento ultrapassado',
+                },
+              }[item.status];
+
+              return (
+                <div
+                  key={item.categoryId}
+                  className="rounded-lg border border-gray-100 p-3.5 transition-all hover:border-gray-200 hover:shadow-sm bg-white"
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`h-3 w-3 rounded-full ring-4 shadow-sm flex-shrink-0 ${statusConfig.dot}`} />
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: item.categoryColor }}
+                        />
+                        <span className="font-semibold text-gray-900 text-sm">{item.categoryName}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-gray-500">
+                        <strong className="text-gray-900">{formatCurrency(item.amountSpent)}</strong> de{' '}
+                        {formatCurrency(item.budgetLimit)}
+                      </span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${statusConfig.badge}`}
+                      >
+                        {item.spentPercentage}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Barra de progresso com a cor do indicador */}
+                  <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${statusConfig.bar}`}
+                      style={{ width: `${Math.min(item.spentPercentage, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

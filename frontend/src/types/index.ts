@@ -10,6 +10,7 @@ export interface Category {
   id: string;
   name: string;
   color: string;
+  budgetLimit?: number | null;
   userId: string;
   createdAt: string;
 }
@@ -45,6 +46,16 @@ export interface CategoryExpense {
   percentage: number;
 }
 
+export interface CategoryBudgetProgress {
+  categoryId: string;
+  categoryName: string;
+  categoryColor: string;
+  budgetLimit: number;
+  amountSpent: number;
+  spentPercentage: number;
+  status: 'normal' | 'warning' | 'exceeded';
+}
+
 export interface DashboardSummary {
   balance: number;
   periodIncome: number;
@@ -52,6 +63,7 @@ export interface DashboardSummary {
   periodTotal: number;
   recentTransactions: Transaction[];
   expensesByCategory: CategoryExpense[];
+  budgetProgress: CategoryBudgetProgress[];
 }
 
 export interface ChartPoint {

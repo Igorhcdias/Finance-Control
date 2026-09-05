@@ -45,7 +45,7 @@ Autentica um usuário existente.
 ## Categorias
 
 ### `POST /categories`
-**Request:** `{ "name": "Alimentação", "color": "#3B82F6" }`
+**Request:** `{ "name": "Alimentação", "color": "#3B82F6", "budgetLimit"?: 800.00 }`
 **Response `201`:** objeto da categoria criada
 **Erros:** `409` nome duplicado · `422` dados inválidos
 
@@ -53,7 +53,7 @@ Autentica um usuário existente.
 **Response `200`:** array de categorias do usuário autenticado
 
 ### `PUT /categories/:id`
-**Request:** `{ "name"?: string, "color"?: string }`
+**Request:** `{ "name"?: string, "color"?: string, "budgetLimit"?: 800.00 | null }`
 **Response `200`:** categoria atualizada
 **Erros:** `404` não encontrada · `409` nome duplicado
 
@@ -119,6 +119,17 @@ Autentica um usuário existente.
       "categoryColor": "#ef4444",
       "amount": 450.0,
       "percentage": 17.8
+    }
+  ],
+  "budgetProgress": [
+    {
+      "categoryId": "uuid",
+      "categoryName": "Alimentação",
+      "categoryColor": "#ef4444",
+      "budgetLimit": 500.0,
+      "amountSpent": 450.0,
+      "spentPercentage": 90.0,
+      "status": "warning"
     }
   ]
 }
