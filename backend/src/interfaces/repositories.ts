@@ -104,7 +104,7 @@ export interface ICategoryComparisonItem {
   month1Amount: number;
   month2Amount: number;
   difference: number;
-  percentageChange: number;
+  percentageChange: number | null;
 }
 
 export interface IMonthlyComparison {
@@ -119,7 +119,7 @@ export interface IMonthlyComparison {
     totalExpense: number;
   };
   difference: number;
-  percentageChange: number;
+  percentageChange: number | null;
   categories: ICategoryComparisonItem[];
 }
 

@@ -10,6 +10,52 @@ vi.mock('../config/prisma', () => ({
   },
 }));
 
+describe('budget progress', () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it('includes budgeted categories without expenses and scopes spending to the user and period', async () => {
+    vi.mocked(prisma.category.findMany).mockResolvedValue([
+      { id: 'food', name: 'Alimentação', color: '#ff0000', budgetLimit: new Prisma.Decimal(100) },
+      { id: 'travel', name: 'Viagens', color: '#0000ff', budgetLimit: new Prisma.Decimal(200) },
+    ] as never);
+    vi.mocked(prisma.transaction.groupBy).mockResolvedValue([
+      { categoryId: 'food', _sum: { amount: new Prisma.Decimal(125) } },
+    ] as never);
+    const start = new Date('2026-09-01T00:00:00Z');
+    const end = new Date('2026-09-30T23:59:59.999Z');
+    const result = await new TransactionRepository().getBudgetProgress('user-1', start, end);
+    expect(prisma.category.findMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1', budgetLimit: { gt: 0 } }, orderBy: { name: 'asc' },
+    });
+    expect(prisma.transaction.groupBy).toHaveBeenCalledWith(expect.objectContaining({
+      where: { userId: 'user-1', type: 'EXPENSE', categoryId: { in: ['food', 'travel'] }, date: { gte: start, lte: end } },
+    }));
+    expect(result).toEqual([
+      expect.objectContaining({ categoryId: 'food', amountSpent: 125, budgetLimit: 100, spentPercentage: 125, status: 'exceeded' }),
+      expect.objectContaining({ categoryId: 'travel', amountSpent: 0, budgetLimit: 200, spentPercentage: 0, status: 'normal' }),
+    ]);
+  });
+
+  it.each([
+    [79.99, 'normal'], [80, 'warning'], [99.99, 'warning'], [100, 'exceeded'], [120, 'exceeded'],
+  ])('classifies spending of %s using the actual amount, not the rounded percentage', async (amount, status) => {
+    vi.mocked(prisma.category.findMany).mockResolvedValue([
+      { id: 'food', name: 'Alimentação', color: '#ff0000', budgetLimit: new Prisma.Decimal(100) },
+    ] as never);
+    vi.mocked(prisma.transaction.groupBy).mockResolvedValue([
+      { categoryId: 'food', _sum: { amount: new Prisma.Decimal(amount) } },
+    ] as never);
+    const result = await new TransactionRepository().getBudgetProgress('user-1', new Date(), new Date());
+    expect(result[0].status).toBe(status);
+  });
+
+  it('returns no progress when no category has a budget', async () => {
+    vi.mocked(prisma.category.findMany).mockResolvedValue([]);
+    expect(await new TransactionRepository().getBudgetProgress('user-1', new Date(), new Date())).toEqual([]);
+    expect(prisma.transaction.groupBy).not.toHaveBeenCalled();
+  });
+});
+
 describe('expenses by category', () => {
   beforeEach(() => vi.clearAllMocks());
 

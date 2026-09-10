@@ -129,7 +129,7 @@ export class TransactionRepository implements ITransactionRepository {
     const categoriesWithBudget = await prisma.category.findMany({
       where: {
         userId,
-        budgetLimit: { not: null },
+        budgetLimit: { gt: 0 },
       },
       orderBy: { name: 'asc' },
     });
@@ -161,9 +161,9 @@ export class TransactionRepository implements ITransactionRepository {
       const spentPercentage = budgetLimit > 0 ? Number(((amountSpent / budgetLimit) * 100).toFixed(1)) : 0;
 
       let status: 'normal' | 'warning' | 'exceeded' = 'normal';
-      if (spentPercentage >= 100) {
+      if (amountSpent >= budgetLimit) {
         status = 'exceeded';
-      } else if (spentPercentage >= 80) {
+      } else if (new Prisma.Decimal(amountSpent).greaterThanOrEqualTo(new Prisma.Decimal(budgetLimit).times('0.8'))) {
         status = 'warning';
       }
 

@@ -33,7 +33,8 @@ export function MonthlyComparisonCard() {
   const [month1, setMonth1] = useState(monthOptions[0]?.value ?? '');
   const [month2, setMonth2] = useState(monthOptions[1]?.value ?? '');
   const [data, setData] = useState<MonthlyComparisonData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [retry, setRetry] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export function MonthlyComparisonCard() {
     return () => {
       isMounted = false;
     };
-  }, [month1, month2]);
+  }, [month1, month2, retry]);
 
   return (
     <div className="card flex flex-col gap-5">
@@ -75,6 +76,7 @@ export function MonthlyComparisonCard() {
           <div className="flex items-center gap-1.5">
             <Calendar size={15} className="text-gray-400" />
             <select
+              aria-label="Mês analisado"
               className="rounded-md border-gray-300 text-xs font-medium text-gray-700 shadow-sm focus:border-primary-500 focus:ring-primary-500 py-1 px-2 border bg-white"
               value={month1}
               onChange={(e) => setMonth1(e.target.value)}
@@ -91,6 +93,7 @@ export function MonthlyComparisonCard() {
 
           <div className="flex items-center gap-1.5">
             <select
+              aria-label="Mês de referência"
               className="rounded-md border-gray-300 text-xs font-medium text-gray-700 shadow-sm focus:border-primary-500 focus:ring-primary-500 py-1 px-2 border bg-white"
               value={month2}
               onChange={(e) => setMonth2(e.target.value)}
@@ -110,7 +113,10 @@ export function MonthlyComparisonCard() {
           Calculando comparação entre os meses...
         </div>
       ) : error || !data ? (
-        <p className="py-6 text-center text-sm text-red-500">{error ?? 'Nenhum dado disponível para o período.'}</p>
+        <div className="py-6 text-center">
+          <p className="text-sm text-red-500">{error ?? 'Nenhum dado disponível para o período.'}</p>
+          <button type="button" className="btn-secondary mt-3" onClick={() => setRetry((value) => value + 1)}>Tentar novamente</button>
+        </div>
       ) : (
         <>
           {/* Cards de Resumo */}
@@ -157,8 +163,9 @@ export function MonthlyComparisonCard() {
                 {formatCurrency(data.difference)}
               </p>
               <span className="text-[11px] font-medium opacity-80">
-                {data.difference > 0 ? '+' : ''}
-                {data.percentageChange}% em relação a {data.month2.label}
+                {data.percentageChange === null
+                  ? `Sem base percentual: não houve despesas em ${data.month2.label}`
+                  : `${data.percentageChange > 0 ? '+' : ''}${data.percentageChange}% em relação a ${data.month2.label}`}
               </span>
             </div>
           </div>
@@ -254,8 +261,9 @@ export function MonthlyComparisonCard() {
                           >
                             {isReduction && <TrendingDown size={12} />}
                             {isIncrease && <TrendingUp size={12} />}
-                            {isIncrease ? '+' : ''}
-                            {item.percentageChange}%
+                            {item.percentageChange === null
+                              ? 'Sem base percentual'
+                              : `${item.percentageChange > 0 ? '+' : ''}${item.percentageChange}%`}
                           </span>
                         </td>
                       </tr>
