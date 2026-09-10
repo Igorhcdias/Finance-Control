@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 
-type ToastVariant = 'success' | 'error' | 'info';
+type ToastVariant = 'success' | 'error' | 'info' | 'warning';
 
 interface ToastMessage {
   id: number;
@@ -18,6 +18,7 @@ const variantStyles: Record<ToastVariant, string> = {
   success: 'bg-primary-600',
   error: 'bg-red-600',
   info: 'bg-gray-800',
+  warning: 'bg-amber-700',
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -28,7 +29,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((current) => [...current, { id, message, variant }]);
     setTimeout(() => {
       setToasts((current) => current.filter((toast) => toast.id !== id));
-    }, 4000);
+    }, variant === 'warning' ? 10000 : 4000);
   }, []);
 
   return (

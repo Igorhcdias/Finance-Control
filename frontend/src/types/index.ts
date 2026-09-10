@@ -16,6 +16,7 @@ export interface Category {
 }
 
 export interface Transaction {
+  budgetWarning?: string;
   id: string;
   description: string;
   amount: number;

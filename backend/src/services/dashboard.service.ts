@@ -18,8 +18,9 @@ export class DashboardService {
 
   async getSummary(userId: string, filterStartDate?: Date, filterEndDate?: Date) {
     const now = new Date();
-    const startOfPeriod = filterStartDate || new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfPeriod = filterEndDate || new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    // Transaction.date is a SQL DATE: use UTC calendar boundaries, independent of server timezone.
+    const startOfPeriod = filterStartDate || new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const endOfPeriod = filterEndDate || new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999));
 
     const [periodIncome, periodExpense, recentTransactions, expensesByCategory, budgetProgress] = await Promise.all([
       this.transactionRepository.sumByType(userId, TransactionType.INCOME, startOfPeriod, endOfPeriod),
@@ -75,13 +76,14 @@ export class DashboardService {
 
     // Pré-preencher mapa para garantir que todos os dias/meses apareçam
     if (diffDays <= 31) {
-      for (let d = new Date(filterStartDate); d <= filterEndDate; d.setDate(d.getDate() + 1)) {
-        const label = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+      for (let d = new Date(filterStartDate); d <= filterEndDate; d.setUTCDate(d.getUTCDate() + 1)) {
+        const label = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', timeZone: 'UTC' });
         chartData.set(label, { income: 0, expense: 0 });
       }
     } else {
-      for (let d = new Date(filterStartDate); d <= filterEndDate; d.setMonth(d.getMonth() + 1)) {
-        const label = d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+      const firstMonth = new Date(Date.UTC(filterStartDate.getUTCFullYear(), filterStartDate.getUTCMonth(), 1));
+      for (let d = firstMonth; d <= filterEndDate; d.setUTCMonth(d.getUTCMonth() + 1)) {
+        const label = d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit', timeZone: 'UTC' });
         if (!chartData.has(label)) {
           chartData.set(label, { income: 0, expense: 0 });
         }
@@ -90,8 +92,8 @@ export class DashboardService {
 
     transactions.forEach(t => {
       const label = diffDays <= 31 
-        ? t.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-        : t.date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+        ? t.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', timeZone: 'UTC' })
+        : t.date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit', timeZone: 'UTC' });
 
       const existing = chartData.get(label) || { income: 0, expense: 0 };
       if (t.type === TransactionType.INCOME) {
