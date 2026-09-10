@@ -1,4 +1,5 @@
-import { TransactionType } from '@prisma/client';
+import { Prisma, TransactionType } from '@prisma/client';
+import { AppError } from '../utils/AppError';
 import {
   ICategoryComparisonItem,
   IMonthlyComparison,
@@ -117,18 +118,21 @@ export class DashboardService {
     month2Str?: string
   ): Promise<IMonthlyComparison> {
     const parseMonth = (str?: string, defaultOffsetMonths: number = 0) => {
-      if (str && /^\d{4}-\d{2}$/.test(str)) {
+      if (str !== undefined) {
+        if (typeof str !== 'string' || !/^[1-9]\d{3}-(0[1-9]|1[0-2])$/.test(str)) {
+          throw new AppError('Informe um mês válido no formato AAAA-MM', 400);
+        }
         const [y, m] = str.split('-').map(Number);
-        const start = new Date(y, m - 1, 1, 0, 0, 0, 0);
-        const end = new Date(y, m, 0, 23, 59, 59, 999);
+        const start = new Date(Date.UTC(y, m - 1, 1));
+        const end = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
         return { year: y, month: m - 1, start, end, yearMonth: str };
       }
       const now = new Date();
-      const targetDate = new Date(now.getFullYear(), now.getMonth() - defaultOffsetMonths, 1);
-      const y = targetDate.getFullYear();
-      const m = targetDate.getMonth();
-      const start = new Date(y, m, 1, 0, 0, 0, 0);
-      const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
+      const targetDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - defaultOffsetMonths, 1));
+      const y = targetDate.getUTCFullYear();
+      const m = targetDate.getUTCMonth();
+      const start = new Date(Date.UTC(y, m, 1));
+      const end = new Date(Date.UTC(y, m + 1, 0, 23, 59, 59, 999));
       const yearMonth = `${y}-${String(m + 1).padStart(2, '0')}`;
       return { year: y, month: m, start, end, yearMonth };
     };
@@ -136,15 +140,13 @@ export class DashboardService {
     const m1 = parseMonth(month1Str, 0);
     const m2 = parseMonth(month2Str, 1);
 
-    const [totalExpense1, totalExpense2, categories1, categories2] = await Promise.all([
-      this.transactionRepository.sumByType(userId, TransactionType.EXPENSE, m1.start, m1.end),
-      this.transactionRepository.sumByType(userId, TransactionType.EXPENSE, m2.start, m2.end),
+    const [categories1, categories2] = await Promise.all([
       this.transactionRepository.sumExpensesByCategory(userId, m1.start, m1.end),
       this.transactionRepository.sumExpensesByCategory(userId, m2.start, m2.end),
     ]);
 
     const formatLabel = (date: Date) => {
-      const formatted = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      const formatted = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
       return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     };
 
@@ -158,7 +160,7 @@ export class DashboardService {
         month1Amount: c.amount,
         month2Amount: 0,
         difference: c.amount,
-        percentageChange: 100,
+        percentageChange: c.amount > 0 ? null : 0,
       });
     }
 
@@ -166,10 +168,8 @@ export class DashboardService {
       const existing = categoryMap.get(c.categoryId);
       if (existing) {
         existing.month2Amount = c.amount;
-        existing.difference = existing.month1Amount - c.amount;
-        existing.percentageChange = c.amount > 0
-          ? Number((((existing.month1Amount - c.amount) / c.amount) * 100).toFixed(1))
-          : 100;
+        existing.difference = new Prisma.Decimal(existing.month1Amount).minus(c.amount).toNumber();
+        existing.percentageChange = this.percentageChange(existing.month1Amount, c.amount);
       } else {
         categoryMap.set(c.categoryId, {
           categoryId: c.categoryId,
@@ -178,7 +178,7 @@ export class DashboardService {
           month1Amount: 0,
           month2Amount: c.amount,
           difference: -c.amount,
-          percentageChange: -100,
+          percentageChange: c.amount > 0 ? -100 : 0,
         });
       }
     }
@@ -187,10 +187,10 @@ export class DashboardService {
       (a, b) => Math.max(b.month1Amount, b.month2Amount) - Math.max(a.month1Amount, a.month2Amount)
     );
 
-    const difference = totalExpense1 - totalExpense2;
-    const percentageChange = totalExpense2 > 0
-      ? Number((((totalExpense1 - totalExpense2) / totalExpense2) * 100).toFixed(1))
-      : (totalExpense1 > 0 ? 100 : 0);
+    const totalExpense1 = categories1.reduce((sum, c) => sum.plus(c.amount), new Prisma.Decimal(0)).toNumber();
+    const totalExpense2 = categories2.reduce((sum, c) => sum.plus(c.amount), new Prisma.Decimal(0)).toNumber();
+    const difference = new Prisma.Decimal(totalExpense1).minus(totalExpense2).toNumber();
+    const percentageChange = this.percentageChange(totalExpense1, totalExpense2);
 
     return {
       month1: {
@@ -207,6 +207,11 @@ export class DashboardService {
       percentageChange,
       categories,
     };
+  }
+
+  private percentageChange(current: number, baseline: number): number | null {
+    if (baseline === 0) return current === 0 ? 0 : null;
+    return new Prisma.Decimal(current).minus(baseline).dividedBy(baseline).times(100).toDecimalPlaces(1).toNumber();
   }
 
   private async sumAllTime(userId: string, type: TransactionType) {

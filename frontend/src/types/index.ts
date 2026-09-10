@@ -84,7 +84,7 @@ export interface CategoryComparisonItem {
   month1Amount: number;
   month2Amount: number;
   difference: number;
-  percentageChange: number;
+  percentageChange: number | null;
 }
 
 export interface MonthlyComparisonData {
@@ -99,6 +99,6 @@ export interface MonthlyComparisonData {
     totalExpense: number;
   };
   difference: number;
-  percentageChange: number;
+  percentageChange: number | null;
   categories: CategoryComparisonItem[];
 }
