@@ -99,19 +99,24 @@ export class TransactionRepository implements ITransactionRepository {
     });
 
     const categoryMap = new Map(categories.map((c) => [c.id, c]));
-    const totalExpense = grouped.reduce((acc, g) => acc + Number(g._sum.amount ?? 0), 0);
+    const totalExpense = grouped.reduce(
+      (acc, g) => acc.plus(g._sum.amount ?? 0),
+      new Prisma.Decimal(0)
+    );
 
     return grouped.map((g) => {
       const category = categoryMap.get(g.categoryId);
       const amount = Number(g._sum.amount ?? 0);
-      const percentage = totalExpense > 0 ? (amount / totalExpense) * 100 : 0;
+      const percentage = totalExpense.greaterThan(0)
+        ? new Prisma.Decimal(g._sum.amount ?? 0).dividedBy(totalExpense).times(100).toDecimalPlaces(1).toNumber()
+        : 0;
 
       return {
         categoryId: g.categoryId,
         categoryName: category?.name ?? 'Outros',
         categoryColor: category?.color ?? '#9ca3af',
         amount,
-        percentage: Number(percentage.toFixed(1)),
+        percentage,
       };
     });
   }

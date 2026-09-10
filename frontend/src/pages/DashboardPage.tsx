@@ -18,11 +18,18 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { formatCurrency, formatDate } from '../utils/format';
 
 export function DashboardPage() {
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${lastDay}`;
+  });
   
   const filterStart = startDate ? new Date(startDate).toISOString() : undefined;
-  const filterEnd = endDate ? new Date(endDate).toISOString() : undefined;
+  const filterEnd = endDate ? `${endDate}T23:59:59.999Z` : undefined;
 
   const { summary, chart, isLoading, error } = useDashboardData(filterStart, filterEnd);
 
@@ -47,6 +54,7 @@ export function DashboardPage() {
               type="date" 
               className="rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 px-2 py-1 border"
               value={startDate}
+              max={endDate || undefined}
               onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
@@ -56,6 +64,7 @@ export function DashboardPage() {
               type="date" 
               className="rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 px-2 py-1 border"
               value={endDate}
+              min={startDate || undefined}
               onChange={(e) => setEndDate(e.target.value)}
             />
           </div>

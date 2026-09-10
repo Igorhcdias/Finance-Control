@@ -17,6 +17,7 @@ export function useDashboardData(startDate?: string, endDate?: string) {
     let isMounted = true;
 
     async function loadData() {
+      setError(null);
       try {
         const [summaryData, chartData] = await Promise.all([
           dashboardService.getSummary(startDate, endDate),

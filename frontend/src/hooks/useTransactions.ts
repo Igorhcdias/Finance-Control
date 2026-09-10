@@ -39,13 +39,20 @@ export function useTransactions({ type }: UseTransactionsOptions) {
   async function createTransaction(input: Omit<TransactionInput, 'type'>) {
     const created = await transactionService.create({ ...input, type });
     setTransactions((current) => [created, ...current]);
-    showToast(type === 'INCOME' ? 'Receita cadastrada com sucesso' : 'Despesa cadastrada com sucesso', 'success');
+    if (created.budgetWarning) {
+      showToast(`Despesa cadastrada com sucesso. ${created.budgetWarning}`, 'warning');
+    } else {
+      showToast(type === 'INCOME' ? 'Receita cadastrada com sucesso' : 'Despesa cadastrada com sucesso', 'success');
+    }
   }
 
   async function updateTransaction(id: string, input: Omit<TransactionInput, 'type'>) {
     const updated = await transactionService.update(id, { ...input, type });
     setTransactions((current) => current.map((item) => (item.id === id ? updated : item)));
-    showToast('Transação atualizada com sucesso', 'success');
+    showToast(
+      updated.budgetWarning ? `Transação atualizada com sucesso. ${updated.budgetWarning}` : 'Transação atualizada com sucesso',
+      updated.budgetWarning ? 'warning' : 'success'
+    );
   }
 
   async function deleteTransaction(id: string) {
