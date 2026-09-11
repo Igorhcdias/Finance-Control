@@ -7,10 +7,12 @@ import {
   User as UserIcon,
   LogOut,
   Wallet,
+  PiggyBank,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const navItems = [
+  { to: '/investimento', label: 'Investimento', icon: PiggyBank },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/receitas', label: 'Receitas', icon: ArrowUpCircle },
   { to: '/despesas', label: 'Despesas', icon: ArrowDownCircle },
@@ -82,10 +84,12 @@ export function MainLayout() {
 
         {/* Navegação inferior para mobile, já que a sidebar fica oculta em telas pequenas */}
         <nav className="flex items-center justify-around border-b border-gray-200 bg-white py-2 md:hidden">
-          {navItems.map(({ to, icon: Icon }) => (
+          {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
+              aria-label={label}
+              title={label}
               className={({ isActive }) =>
                 `rounded-lg p-2 ${isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-500'}`
               }

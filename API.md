@@ -197,3 +197,20 @@ Compara despesas entre dois meses específicos.
 | 409 | Conflito (e-mail duplicado, nome de categoria duplicado, exclusão bloqueada) |
 | 422 | Dados de entrada inválidos (falha de validação Zod) |
 | 500 | Erro interno não tratado |
+# Investimento (controle independente)
+
+Todas as rotas `/investments` exigem autenticação e acessam apenas as reservas do usuário autenticado.
+
+| Método | Rota | Resultado |
+| --- | --- | --- |
+| GET | `/investments` | Lista reservas por data decrescente (200) |
+| POST | `/investments` | Cria uma reserva (201) |
+| PUT | `/investments/:id` | Substitui descrição, valor e data (204) |
+| DELETE | `/investments/:id` | Exclui uma reserva (204) |
+
+Corpo de POST e PUT: `{"description":"Reserva mensal","amount":250.50,"date":"2026-09-11"}`.
+O valor deve ser positivo, ter no máximo duas casas decimais e não exceder 9.999.999.999,99. A data deve existir e usar `YYYY-MM-DD`; datas futuras são permitidas. Registros inexistentes ou de outro usuário retornam 404 em alterações e exclusões.
+
+As reservas são persistidas na tabela `investments`, sem gerar transações nem alterar o dashboard, categorias ou orçamentos. A tela `/investimento` mostra o total de todos os registros e o total do período selecionado. Esses valores representam reservas registradas, sem cálculo de rendimentos ou movimentação bancária.
+
+Ao atualizar outro ambiente, execute `npx prisma migrate deploy` no diretório `backend` antes de iniciar a nova versão da API, e gere o cliente com `npm run prisma:generate` antes do build.

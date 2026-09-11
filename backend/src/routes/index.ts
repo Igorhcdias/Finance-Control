@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import investmentRoutes from './investment.routes';
 import authRoutes from './auth.routes';
 import categoryRoutes from './category.routes';
 import transactionRoutes from './transaction.routes';
@@ -11,6 +12,7 @@ import userRoutes from './user.routes';
  * módulos de rota sem tocar em app.ts.
  */
 const router = Router();
+router.use('/investments', investmentRoutes);
 
 router.use('/auth', authRoutes);
 router.use('/categories', categoryRoutes);

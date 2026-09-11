@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { InvestmentPage } from '../pages/InvestmentPage';
 import { PrivateRoute } from './PrivateRoute';
 import { MainLayout } from '../layouts/MainLayout';
 import { LoginPage } from '../pages/LoginPage';
@@ -26,6 +27,7 @@ export function AppRoutes() {
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/investimento" element={<InvestmentPage />} />
           <Route path="/receitas" element={<IncomesPage />} />
           <Route path="/despesas" element={<ExpensesPage />} />
           <Route path="/categorias" element={<CategoriesPage />} />
