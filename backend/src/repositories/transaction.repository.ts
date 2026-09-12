@@ -3,6 +3,7 @@ import { prisma } from '../config/prisma';
 import {
   ICategoryBudgetProgress,
   ICategoryExpense,
+  IPaymentMethodExpenses,
   ICreateTransactionData,
   ITransactionFilters,
   ITransactionRepository,
@@ -10,6 +11,25 @@ import {
 } from '../interfaces/repositories';
 
 export class TransactionRepository implements ITransactionRepository {
+  async sumExpensesByPaymentMethod(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<IPaymentMethodExpenses> {
+    const groups = await prisma.transaction.groupBy({
+      by: ['paymentMethod'],
+      where: { userId, type: TransactionType.EXPENSE, date: { gte: startDate, lte: endDate } },
+      _sum: { amount: true },
+    });
+    const totals: IPaymentMethodExpenses = { debit: 0, credit: 0, unspecified: 0 };
+    for (const group of groups) {
+      const key = group.paymentMethod === 'DEBIT' ? 'debit'
+        : group.paymentMethod === 'CREDIT' ? 'credit' : 'unspecified';
+      totals[key] = Number(group._sum.amount ?? 0);
+    }
+    return totals;
+  }
+
   async create(data: ICreateTransactionData) {
     return prisma.transaction.create({ data, include: { category: true } });
   }

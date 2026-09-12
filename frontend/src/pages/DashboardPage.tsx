@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wallet, TrendingUp, TrendingDown, Scale, Target } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Scale, Target, CreditCard, CircleHelp } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -84,6 +84,27 @@ export function DashboardPage() {
       </div>
 
       {/* Gráficos lado a lado */}
+      <section aria-labelledby="payment-method-heading">
+        <h2 id="payment-method-heading" className="text-base font-semibold text-gray-900">Despesas por forma de pagamento</h2>
+        <p className="mt-1 mb-4 text-xs text-gray-500">Totais pela data da despesa, no período selecionado.</p>
+        {summary.expensesByPaymentMethod ? (
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <MetricCard label="Débito" value={formatCurrency(summary.expensesByPaymentMethod.debit)} icon={<Wallet size={20} />} />
+              <MetricCard label="Crédito" value={formatCurrency(summary.expensesByPaymentMethod.credit)} icon={<CreditCard size={20} />} />
+              <MetricCard label="Não informado" value={formatCurrency(summary.expensesByPaymentMethod.unspecified)} icon={<CircleHelp size={20} />} />
+            </div>
+            {summary.expensesByPaymentMethod.unspecified > 0 && (
+              <p className="mt-3 text-xs text-gray-500">
+                Há despesas sem forma de pagamento. <Link to="/despesas" className="text-primary-600 underline">Edite essas despesas para classificá-las.</Link>
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-gray-500">Separação por forma de pagamento indisponível no momento.</p>
+        )}
+      </section>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="card">
           <h2 className="mb-4 text-base font-semibold text-gray-900">Receitas x Despesas (período selecionado)</h2>
@@ -290,6 +311,7 @@ export function DashboardPage() {
                   <th className="pb-2 font-medium">Descrição</th>
                   <th className="pb-2 font-medium">Categoria</th>
                   <th className="pb-2 font-medium">Data</th>
+                  <th className="pb-2 font-medium">Pagamento</th>
                   <th className="pb-2 text-right font-medium">Valor</th>
                 </tr>
               </thead>
@@ -306,6 +328,11 @@ export function DashboardPage() {
                       </span>
                     </td>
                     <td className="py-2.5 text-gray-500">{formatDate(transaction.date)}</td>
+                    <td className="py-2.5 text-gray-500">
+                      {transaction.type === 'INCOME' ? '—'
+                        : transaction.paymentMethod === 'DEBIT' ? 'Débito'
+                        : transaction.paymentMethod === 'CREDIT' ? 'Crédito' : 'Não informado'}
+                    </td>
                     <td
                       className={`py-2.5 text-right font-medium ${
                         transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'

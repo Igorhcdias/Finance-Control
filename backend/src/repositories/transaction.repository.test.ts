@@ -10,6 +10,41 @@ vi.mock('../config/prisma', () => ({
   },
 }));
 
+describe('expenses by payment method', () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it('includes unclassified expenses and scopes totals to the user and selected period', async () => {
+    vi.mocked(prisma.transaction.groupBy).mockResolvedValue([
+      { paymentMethod: 'DEBIT', _sum: { amount: new Prisma.Decimal('75.30') } },
+      { paymentMethod: 'CREDIT', _sum: { amount: new Prisma.Decimal('20.10') } },
+      { paymentMethod: null, _sum: { amount: new Prisma.Decimal('5.05') } },
+    ] as never);
+    const start = new Date('2026-09-01T00:00:00Z');
+    const end = new Date('2026-09-30T23:59:59.999Z');
+    const result = await new TransactionRepository().sumExpensesByPaymentMethod('user-1', start, end);
+    expect(prisma.transaction.groupBy).toHaveBeenCalledWith({
+      by: ['paymentMethod'],
+      where: { userId: 'user-1', type: 'EXPENSE', date: { gte: start, lte: end } },
+      _sum: { amount: true },
+    });
+    expect(result).toEqual({ debit: 75.3, credit: 20.1, unspecified: 5.05 });
+  });
+
+  it('returns zero totals for a period with no expenses', async () => {
+    vi.mocked(prisma.transaction.groupBy).mockResolvedValue([]);
+    expect(await new TransactionRepository().sumExpensesByPaymentMethod('user-1', new Date(), new Date()))
+      .toEqual({ debit: 0, credit: 0, unspecified: 0 });
+  });
+
+  it('returns zero for payment methods without expenses', async () => {
+    vi.mocked(prisma.transaction.groupBy).mockResolvedValue([
+      { paymentMethod: 'CREDIT', _sum: { amount: new Prisma.Decimal('12.50') } },
+    ] as never);
+    expect(await new TransactionRepository().sumExpensesByPaymentMethod('user-1', new Date(), new Date()))
+      .toEqual({ debit: 0, credit: 12.5, unspecified: 0 });
+  });
+});
+
 describe('budget progress', () => {
   beforeEach(() => vi.resetAllMocks());
 

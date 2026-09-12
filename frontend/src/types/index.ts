@@ -60,6 +60,11 @@ export interface CategoryBudgetProgress {
 }
 
 export interface DashboardSummary {
+  expensesByPaymentMethod: {
+    debit: number;
+    credit: number;
+    unspecified: number;
+  };
   balance: number;
   periodIncome: number;
   periodExpense: number;
