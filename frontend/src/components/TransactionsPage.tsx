@@ -126,6 +126,7 @@ export function TransactionsPage({ type, title, subtitle }: TransactionsPageProp
                 <th className="px-5 py-3 font-medium">Descrição</th>
                 <th className="px-5 py-3 font-medium">Categoria</th>
                 <th className="px-5 py-3 font-medium">Data</th>
+                {type === 'EXPENSE' && <th className="px-5 py-3 font-medium">Pagamento</th>}
                 <th className="px-5 py-3 text-right font-medium">Valor</th>
                 <th className="px-5 py-3 text-right font-medium">Ações</th>
               </tr>
@@ -143,6 +144,11 @@ export function TransactionsPage({ type, title, subtitle }: TransactionsPageProp
                     </span>
                   </td>
                   <td className="px-5 py-3 text-gray-500">{formatDate(transaction.date)}</td>
+                  {type === 'EXPENSE' && (
+                    <td className="px-5 py-3 text-gray-500">
+                      {transaction.paymentMethod === 'DEBIT' ? 'Débito' : transaction.paymentMethod === 'CREDIT' ? 'Crédito' : 'Não informado'}
+                    </td>
+                  )}
                   <td className={`px-5 py-3 text-right font-medium ${type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                     {formatCurrency(transaction.amount)}
                   </td>

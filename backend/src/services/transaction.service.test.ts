@@ -43,6 +43,21 @@ describe('budget warnings when saving transactions', () => {
     expect(repository.update).toHaveBeenCalledWith(saved.id, { amount: 60 });
   });
 
+  it.each(['DEBIT', 'CREDIT'] as const)('persists %s when creating an expense', async (paymentMethod) => {
+    await service.create('user-1', { ...input, paymentMethod });
+    expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ paymentMethod }));
+  });
+
+  it('updates the payment method of an existing expense', async () => {
+    await service.update('user-1', saved.id, { paymentMethod: 'CREDIT' });
+    expect(repository.update).toHaveBeenCalledWith(saved.id, { paymentMethod: 'CREDIT' });
+  });
+
+  it('clears the payment method when an expense becomes income', async () => {
+    await service.update('user-1', saved.id, { type: 'INCOME' });
+    expect(repository.update).toHaveBeenCalledWith(saved.id, { type: 'INCOME', paymentMethod: null });
+  });
+
   it.each([90, 100])('does not warn when spending is %s for a limit of 100', async (amountSpent) => {
     repository.getBudgetProgress.mockResolvedValue([{ categoryId: 'food', budgetLimit: 100, amountSpent }]);
     expect(await service.create('user-1', input)).not.toHaveProperty('budgetWarning');

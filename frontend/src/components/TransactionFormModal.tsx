@@ -11,6 +11,7 @@ const transactionFormSchema = z.object({
   amount: z.coerce.number({ invalid_type_error: 'Informe um valor' }).positive('O valor deve ser positivo'),
   date: z.string().min(1, 'Informe a data'),
   categoryId: z.string().min(1, 'Selecione uma categoria'),
+  paymentMethod: z.enum(['DEBIT', 'CREDIT']).optional(),
 });
 
 export type TransactionFormData = z.infer<typeof transactionFormSchema>;
@@ -37,7 +38,12 @@ export function TransactionFormModal({
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<TransactionFormData>({ resolver: zodResolver(transactionFormSchema) });
+  } = useForm<TransactionFormData>({
+    resolver: zodResolver(transactionFormSchema.refine(
+      (data) => type !== 'EXPENSE' || !!data.paymentMethod,
+      { path: ['paymentMethod'], message: 'Selecione débito ou crédito' },
+    )),
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -46,12 +52,13 @@ export function TransactionFormModal({
         amount: transaction?.amount ?? undefined,
         date: transaction ? toInputDate(transaction.date) : toInputDate(new Date()),
         categoryId: transaction?.categoryId ?? categories[0]?.id ?? '',
+        paymentMethod: type === 'EXPENSE' ? transaction?.paymentMethod ?? undefined : undefined,
       });
     }
-  }, [isOpen, transaction, categories, reset]);
+  }, [isOpen, transaction, categories, reset, type]);
 
   async function handleFormSubmit(data: TransactionFormData) {
-    await onSubmit(data);
+    await onSubmit({ ...data, paymentMethod: type === 'EXPENSE' ? data.paymentMethod : undefined });
     onClose();
   }
 
@@ -100,6 +107,20 @@ export function TransactionFormModal({
             </select>
             {errors.categoryId && <p className="error-text">{errors.categoryId.message}</p>}
           </div>
+
+          {type === 'EXPENSE' && (
+            <div className="mb-6">
+              <label className="label-field" htmlFor="paymentMethod">Forma de pagamento</label>
+              <select id="paymentMethod" className="input-field" {...register('paymentMethod', {
+                setValueAs: (value) => value === '' ? undefined : value,
+              })}>
+                <option value="">Selecione</option>
+                <option value="DEBIT">Débito</option>
+                <option value="CREDIT">Crédito</option>
+              </select>
+              {errors.paymentMethod && <p className="error-text">{errors.paymentMethod.message}</p>}
+            </div>
+          )}
 
           <div className="flex justify-end gap-3">
             <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>

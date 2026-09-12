@@ -1,4 +1,5 @@
 export type TransactionType = 'INCOME' | 'EXPENSE';
+export type PaymentMethod = 'DEBIT' | 'CREDIT';
 
 export interface User {
   id: string;
@@ -17,6 +18,7 @@ export interface Category {
 
 export interface Transaction {
   budgetWarning?: string;
+  paymentMethod?: PaymentMethod | null;
   id: string;
   description: string;
   amount: number;

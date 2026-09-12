@@ -1,4 +1,4 @@
-import { Category, Transaction, TransactionType, User } from '@prisma/client';
+import { Category, PaymentMethod, Transaction, TransactionType, User } from '@prisma/client';
 
 /**
  * Interfaces de Repositório.
@@ -53,6 +53,7 @@ export interface ICategoryRepository {
 }
 
 export interface ICreateTransactionData {
+  paymentMethod?: PaymentMethod | null;
   description: string;
   amount: number;
   type: TransactionType;
@@ -62,6 +63,7 @@ export interface ICreateTransactionData {
 }
 
 export interface IUpdateTransactionData {
+  paymentMethod?: PaymentMethod | null;
   description?: string;
   amount?: number;
   type?: TransactionType;

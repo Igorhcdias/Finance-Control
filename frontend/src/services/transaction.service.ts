@@ -1,7 +1,8 @@
 import { api } from './api';
-import { PaginatedResponse, Transaction, TransactionType } from '../types';
+import { PaginatedResponse, PaymentMethod, Transaction, TransactionType } from '../types';
 
 export interface TransactionInput {
+  paymentMethod?: PaymentMethod;
   description: string;
   amount: number;
   type: TransactionType;

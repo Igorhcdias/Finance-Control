@@ -6,6 +6,7 @@ export const createTransactionSchema = z.object({
   description: z.string().trim().min(2, 'Descrição deve ter no mínimo 2 caracteres').max(255),
   amount: z.number().positive('O valor deve ser positivo'),
   type: transactionTypeSchema,
+  paymentMethod: z.enum(['DEBIT', 'CREDIT']).optional(),
   date: z.coerce.date(),
   categoryId: z.string().uuid('categoryId inválido'),
 });
