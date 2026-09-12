@@ -27,12 +27,13 @@ export class DashboardService {
     const startOfPeriod = filterStartDate || new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     const endOfPeriod = filterEndDate || new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999));
 
-    const [periodIncome, periodExpense, recentTransactions, expensesByCategory, budgetProgress] = await Promise.all([
+    const [periodIncome, periodExpense, recentTransactions, expensesByCategory, budgetProgress, expensesByPaymentMethod] = await Promise.all([
       this.transactionRepository.sumByType(userId, TransactionType.INCOME, startOfPeriod, endOfPeriod),
       this.transactionRepository.sumByType(userId, TransactionType.EXPENSE, startOfPeriod, endOfPeriod),
       this.transactionRepository.findRecentByUser(userId, 5),
       this.transactionRepository.sumExpensesByCategory(userId, startOfPeriod, endOfPeriod),
       this.transactionRepository.getBudgetProgress(userId, startOfPeriod, endOfPeriod),
+      this.transactionRepository.sumExpensesByPaymentMethod(userId, startOfPeriod, endOfPeriod),
     ]);
 
     // Saldo total considera TODO o histórico do usuário, não só o período (RN05).
@@ -47,6 +48,7 @@ export class DashboardService {
       periodTotal: periodIncome - periodExpense,
       recentTransactions,
       expensesByCategory,
+      expensesByPaymentMethod,
       budgetProgress,
     };
   }

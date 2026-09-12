@@ -85,12 +85,14 @@ it('uses the entire current UTC month for category expenses, budgets and totals'
     findRecentByUser: vi.fn().mockResolvedValue([]),
     sumExpensesByCategory: vi.fn().mockResolvedValue([]),
     getBudgetProgress: vi.fn().mockResolvedValue([]),
+    sumExpensesByPaymentMethod: vi.fn().mockResolvedValue({ debit: 0, credit: 0, unspecified: 0 }),
   };
   await new DashboardService(repository as unknown as ITransactionRepository, { sumByUser: vi.fn().mockResolvedValue(0) }).getSummary('user-1');
   const start = new Date('2026-09-01T00:00:00.000Z');
   const end = new Date('2026-09-30T23:59:59.999Z');
   expect(repository.sumExpensesByCategory).toHaveBeenCalledWith('user-1', start, end);
   expect(repository.getBudgetProgress).toHaveBeenCalledWith('user-1', start, end);
+  expect(repository.sumExpensesByPaymentMethod).toHaveBeenCalledWith('user-1', start, end);
   expect(repository.sumByType).toHaveBeenCalledWith('user-1', 'EXPENSE', start, end);
 });
 
@@ -101,6 +103,7 @@ it('deducts current investment reserves from the all-time balance after creation
     findRecentByUser: vi.fn().mockResolvedValue([]),
     sumExpensesByCategory: vi.fn().mockResolvedValue([]),
     getBudgetProgress: vi.fn().mockResolvedValue([]),
+    sumExpensesByPaymentMethod: vi.fn().mockResolvedValue({ debit: 5, credit: 12, unspecified: 3 }),
   };
   const investments = { sumByUser: vi.fn() };
   const service = new DashboardService(repository as unknown as ITransactionRepository, investments);
@@ -108,6 +111,10 @@ it('deducts current investment reserves from the all-time balance after creation
     investments.sumByUser.mockResolvedValue(reserved);
     const result = await service.getSummary('owner', new Date('2026-09-01T00:00:00Z'), new Date('2026-09-30T23:59:59Z'));
     expect(result).toMatchObject({ balance, periodIncome: 100, periodExpense: 20, periodTotal: 80 });
+    expect(result.expensesByPaymentMethod).toEqual({ debit: 5, credit: 12, unspecified: 3 });
+    expect(repository.sumExpensesByPaymentMethod).toHaveBeenLastCalledWith(
+      'owner', new Date('2026-09-01T00:00:00Z'), new Date('2026-09-30T23:59:59Z'),
+    );
     expect(investments.sumByUser).toHaveBeenLastCalledWith('owner');
   }
 });

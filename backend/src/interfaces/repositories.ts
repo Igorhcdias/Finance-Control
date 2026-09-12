@@ -89,6 +89,12 @@ export interface ICategoryExpense {
   percentage: number;
 }
 
+export interface IPaymentMethodExpenses {
+  debit: number;
+  credit: number;
+  unspecified: number;
+}
+
 export interface ICategoryBudgetProgress {
   categoryId: string;
   categoryName: string;
@@ -136,6 +142,7 @@ export interface ITransactionRepository {
   delete(id: string): Promise<void>;
   sumByType(userId: string, type: TransactionType, startDate: Date, endDate: Date): Promise<number>;
   sumExpensesByCategory(userId: string, startDate: Date, endDate: Date): Promise<ICategoryExpense[]>;
+  sumExpensesByPaymentMethod(userId: string, startDate: Date, endDate: Date): Promise<IPaymentMethodExpenses>;
   getBudgetProgress(userId: string, startDate: Date, endDate: Date): Promise<ICategoryBudgetProgress[]>;
   findRecentByUser(userId: string, limit: number): Promise<Transaction[]>;
   findAllForPeriod(userId: string, startDate: Date, endDate: Date): Promise<Transaction[]>;

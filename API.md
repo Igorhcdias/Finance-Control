@@ -114,6 +114,7 @@ Receitas não armazenam forma de pagamento. O campo também pode ser alterado no
   "balance": 4200.5,
   "periodIncome": 5500,
   "periodExpense": 2526.4,
+  "expensesByPaymentMethod": { "debit": 1500, "credit": 1000, "unspecified": 26.4 },
   "periodTotal": 2973.6,
   "recentTransactions": [ /* últimas 5 transações */ ],
   "expensesByCategory": [
