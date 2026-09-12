@@ -1,5 +1,6 @@
 import { Prisma, TransactionType } from '@prisma/client';
 import { AppError } from '../utils/AppError';
+import { InvestmentRepository } from '../repositories/investment.repository';
 import {
   ICategoryComparisonItem,
   IMonthlyComparison,
@@ -15,7 +16,10 @@ import {
  * que não lhe pertence (SRP).
  */
 export class DashboardService {
-  constructor(private readonly transactionRepository: ITransactionRepository) {}
+  constructor(
+    private readonly transactionRepository: ITransactionRepository,
+    private readonly investmentRepository: Pick<InvestmentRepository, 'sumByUser'>,
+  ) {}
 
   async getSummary(userId: string, filterStartDate?: Date, filterEndDate?: Date) {
     const now = new Date();
@@ -34,9 +38,10 @@ export class DashboardService {
     // Saldo total considera TODO o histórico do usuário, não só o período (RN05).
     const totalIncome = await this.sumAllTime(userId, TransactionType.INCOME);
     const totalExpense = await this.sumAllTime(userId, TransactionType.EXPENSE);
+    const totalInvested = await this.investmentRepository.sumByUser(userId);
 
     return {
-      balance: totalIncome - totalExpense,
+      balance: new Prisma.Decimal(totalIncome).minus(totalExpense).minus(totalInvested).toNumber(),
       periodIncome,
       periodExpense,
       periodTotal: periodIncome - periodExpense,

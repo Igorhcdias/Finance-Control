@@ -3,10 +3,19 @@ import { investmentSchema } from '../dto/investment.dto';
 import { InvestmentService } from './investment.service';
 import { InvestmentRepository } from '../repositories/investment.repository';
 vi.mock('../config/prisma', () => ({
-  prisma: { investment: { findMany: vi.fn(), create: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() } },
+  prisma: { investment: { aggregate: vi.fn(), findMany: vi.fn(), create: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() } },
 }));
 import { prisma } from '../config/prisma';
 const input = { description: 'Reserva', amount: 10.25, date: '2026-09-11' };
+
+it('sums only the authenticated user reserves across all dates and handles an empty total', async () => {
+  const repo = new InvestmentRepository();
+  vi.mocked(prisma.investment.aggregate).mockResolvedValueOnce({ _sum: { amount: '125.50' } } as any);
+  expect(await repo.sumByUser('owner')).toBe(125.5);
+  expect(prisma.investment.aggregate).toHaveBeenCalledWith({ where: { userId: 'owner' }, _sum: { amount: true } });
+  vi.mocked(prisma.investment.aggregate).mockResolvedValueOnce({ _sum: { amount: null } } as any);
+  expect(await repo.sumByUser('owner')).toBe(0);
+});
 
 it.each([0, -1, 1.001, Infinity, 10000000000])('rejects invalid amount %s', amount => {
   expect(investmentSchema.safeParse({ ...input, amount }).success).toBe(false);
