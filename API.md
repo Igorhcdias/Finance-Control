@@ -66,6 +66,10 @@ Autentica um usuário existente.
 ## Transações (Receitas e Despesas)
 
 ### `POST /transactions`
+Para despesas, envie `paymentMethod`: `"DEBIT"` (débito) ou `"CREDIT"` (crédito).
+O campo é opcional na API para compatibilidade; registros antigos permanecem com `null`.
+Receitas não armazenam forma de pagamento. O campo também pode ser alterado no `PUT` e é retornado nas consultas.
+
 **Request:**
 ```json
 {

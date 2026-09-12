@@ -19,6 +19,7 @@ export class TransactionService {
       description: data.description,
       amount: data.amount,
       type: data.type,
+      paymentMethod: data.type === 'EXPENSE' ? data.paymentMethod : null,
       date: data.date,
       categoryId: data.categoryId,
       userId,
@@ -40,13 +41,16 @@ export class TransactionService {
   }
 
   async update(userId: string, transactionId: string, data: UpdateTransactionDTO) {
-    await this.getOwnedTransactionOrFail(userId, transactionId);
+    const existing = await this.getOwnedTransactionOrFail(userId, transactionId);
 
     if (data.categoryId) {
       await this.assertCategoryBelongsToUser(userId, data.categoryId);
     }
 
-    const transaction = await this.transactionRepository.update(transactionId, data);
+    const transaction = await this.transactionRepository.update(transactionId, {
+      ...data,
+      ...((data.type ?? existing.type) === 'INCOME' ? { paymentMethod: null } : {}),
+    });
     return this.withBudgetWarning(userId, transaction);
   }
 
