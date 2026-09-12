@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { DashboardService } from '../services/dashboard.service';
 import { TransactionRepository } from '../repositories/transaction.repository';
+import { InvestmentRepository } from '../repositories/investment.repository';
 
-const dashboardService = new DashboardService(new TransactionRepository());
+const dashboardService = new DashboardService(new TransactionRepository(), new InvestmentRepository());
 
 export class DashboardController {
   async summary(req: Request, res: Response) {

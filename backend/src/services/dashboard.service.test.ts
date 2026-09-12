@@ -10,7 +10,7 @@ const expense = (categoryId: string, amount: number): ICategoryExpense => ({
 
 function comparisonService(first: ICategoryExpense[] = [], second: ICategoryExpense[] = []) {
   const sumExpensesByCategory = vi.fn().mockResolvedValueOnce(first).mockResolvedValueOnce(second);
-  const service = new DashboardService({ sumExpensesByCategory } as unknown as ITransactionRepository);
+  const service = new DashboardService({ sumExpensesByCategory } as unknown as ITransactionRepository, { sumByUser: vi.fn().mockResolvedValue(0) });
   return { service, sumExpensesByCategory };
 }
 
@@ -86,10 +86,28 @@ it('uses the entire current UTC month for category expenses, budgets and totals'
     sumExpensesByCategory: vi.fn().mockResolvedValue([]),
     getBudgetProgress: vi.fn().mockResolvedValue([]),
   };
-  await new DashboardService(repository as unknown as ITransactionRepository).getSummary('user-1');
+  await new DashboardService(repository as unknown as ITransactionRepository, { sumByUser: vi.fn().mockResolvedValue(0) }).getSummary('user-1');
   const start = new Date('2026-09-01T00:00:00.000Z');
   const end = new Date('2026-09-30T23:59:59.999Z');
   expect(repository.sumExpensesByCategory).toHaveBeenCalledWith('user-1', start, end);
   expect(repository.getBudgetProgress).toHaveBeenCalledWith('user-1', start, end);
   expect(repository.sumByType).toHaveBeenCalledWith('user-1', 'EXPENSE', start, end);
+});
+
+it('deducts current investment reserves from the all-time balance after creation, editing and deletion', async () => {
+  const repository = {
+    sumByType: vi.fn().mockImplementation(async (_user, type, start: Date) =>
+      start.getFullYear() === 2000 ? (type === 'INCOME' ? 1000.30 : 200.10) : (type === 'INCOME' ? 100 : 20)),
+    findRecentByUser: vi.fn().mockResolvedValue([]),
+    sumExpensesByCategory: vi.fn().mockResolvedValue([]),
+    getBudgetProgress: vi.fn().mockResolvedValue([]),
+  };
+  const investments = { sumByUser: vi.fn() };
+  const service = new DashboardService(repository as unknown as ITransactionRepository, investments);
+  for (const [reserved, balance] of [[0, 800.20], [100.10, 700.10], [300.20, 500], [900.20, -100], [0, 800.20]]) {
+    investments.sumByUser.mockResolvedValue(reserved);
+    const result = await service.getSummary('owner', new Date('2026-09-01T00:00:00Z'), new Date('2026-09-30T23:59:59Z'));
+    expect(result).toMatchObject({ balance, periodIncome: 100, periodExpense: 20, periodTotal: 80 });
+    expect(investments.sumByUser).toHaveBeenLastCalledWith('owner');
+  }
 });

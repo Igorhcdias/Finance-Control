@@ -1,6 +1,10 @@
 import { prisma } from '../config/prisma';
 import { InvestmentInput } from '../dto/investment.dto';
 export class InvestmentRepository {
+  async sumByUser(userId: string) {
+    const result = await prisma.investment.aggregate({ where: { userId }, _sum: { amount: true } });
+    return Number(result._sum.amount ?? 0);
+  }
   list(userId: string) {
     return prisma.investment.findMany({ where: { userId }, orderBy: [{ date: 'desc' }, { createdAt: 'desc' }] });
   }
