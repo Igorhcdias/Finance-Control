@@ -4,6 +4,12 @@ Aplicação Full Stack para controle de finanças pessoais: cadastro/login, dash
 
 Este projeto foi construído como um exemplo de **arquitetura e boas práticas de Engenharia de Software**, não como um sistema complexo. Veja [`ARCHITECTURE.md`](./ARCHITECTURE.md) para a explicação detalhada das decisões técnicas e [`API.md`](./API.md) para a documentação completa das rotas.
 
+## Backend Python em desenvolvimento
+
+A migração paralela para FastAPI está em [`backend-python`](./backend-python/README.md),
+com instruções locais, endpoints, testes e diferenças documentadas. O backend Node.js
+e a configuração publicada continuam preservados.
+
 ## Stack
 
 **Backend:** Node.js · Express · TypeScript · Prisma · PostgreSQL · JWT · Zod
