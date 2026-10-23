@@ -12,13 +12,17 @@ e a configuração publicada continuam preservados.
 
 ## Stack
 
-**Backend:** Node.js · Express · TypeScript · Prisma · PostgreSQL · JWT · Zod
+**Backend:** Python 3.12+ · FastAPI · SQLAlchemy 2 · Pydantic · PostgreSQL · JWT
+
 **Frontend:** React · TypeScript · Vite · TailwindCSS · React Router · Axios · React Hook Form · Zod · Recharts
 
 ## Estrutura
 
 ```
 finance-control/
+├── backend-python/   # Nova API REST (FastAPI), configuração e testes
+├── scripts/          # Iniciar/parar o ambiente local no Windows
+├── docs/LOCAL-FASTAPI.md # Guia do ambiente local React + FastAPI
 ├── backend/          # API REST
 │   └── src/
 │       ├── controllers/   # Traduz HTTP <-> Service
@@ -46,9 +50,119 @@ finance-control/
 ## Pré-requisitos
 
 - Node.js 18+
+- Python 3.12+ para o novo backend
 - PostgreSQL 14+ (local ou em container)
 
-## Como rodar localmente
+## Como rodar o novo backend (FastAPI)
+
+### Ambiente Windows já preparado
+
+Na raiz do repositório, execute no PowerShell:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-Local.ps1
+```
+
+O script inicia PostgreSQL, FastAPI e React, provisiona as tabelas no banco local
+`127.0.0.1:55432/finance_dev` e salva os logs em `.tools/`.
+Ele requer o Python com dependências já preparado em `.tools/python`, as
+dependências do frontend instaladas (`npm.cmd ci` dentro de `frontend`) e
+PostgreSQL 18 em `C:\Program Files\PostgreSQL\18\bin`. Para outro caminho,
+acrescente `-PgBin 'C:\caminho\PostgreSQL\bin'` ao comando.
+Esse atalho depende do ambiente preparado neste computador; para configurar o
+Python em uma instalação nova, siga os passos manuais abaixo.
+
+Para parar os serviços, preservando os dados locais:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Stop-Local.ps1
+```
+
+Consulte o [guia local](./docs/LOCAL-FASTAPI.md) para detalhes do PostgreSQL
+isolado, conta de homologação e configuração do ambiente.
+
+### Execução manual
+
+Na raiz do repositório, com Python 3.12+ instalado:
+
+```powershell
+cd backend-python
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install -e ".[test]" -c requirements.lock
+# Copie apenas na primeira configuração, preservando um .env existente:
+Copy-Item .env.example .env
+```
+
+No Linux/macOS, use `python3.12 -m venv .venv`, `.venv/bin/python` e
+`cp .env.example .env` nos comandos equivalentes.
+
+Edite `backend-python/.env` com os dados do seu PostgreSQL de desenvolvimento:
+
+```dotenv
+DATABASE_URL=postgresql://finance:finance@localhost:5432/finance_dev
+JWT_SECRET=substitua-por-um-segredo-longo-aleatorio-local
+JWT_EXPIRES_IN=1d
+FRONTEND_URL=http://localhost:5173
+PORT=3333
+```
+
+`DATABASE_URL` e `JWT_SECRET` são obrigatórios. Ajuste usuário, senha, porta e
+nome do banco. A URL não deve conter o parâmetro `schema` usado pelo Prisma.
+O banco precisa estar ativo **com as tabelas já provisionadas**: a API Python
+não cria tabelas, executa migrações ou popula dados ao iniciar. O histórico do
+esquema está em `backend/prisma/migrations`. Para provisionar o banco isolado
+na porta 55432, use o script e o [guia local](./docs/LOCAL-FASTAPI.md).
+Veja também as [orientações de banco](./backend-python/README.md#banco-e-configuração).
+
+Dentro de `backend-python`, inicie a API:
+
+```powershell
+.venv\Scripts\python.exe -m app
+```
+
+Para recarga automática durante o desenvolvimento:
+
+```powershell
+.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 3333
+```
+
+Em outro terminal, a partir da raiz, inicie o frontend:
+
+```powershell
+cd frontend
+# Copie apenas se o arquivo ainda não existir:
+Copy-Item .env.example .env.development.local
+npm.cmd install
+npm.cmd run dev
+```
+
+Confira `VITE_API_URL=http://localhost:3333/api` em
+`frontend/.env.development.local`. Abra o frontend por `localhost`, conforme
+a origem configurada em `FRONTEND_URL`.
+
+| Serviço | Endereço |
+|---|---|
+| Frontend React | http://localhost:5173 |
+| API FastAPI | http://localhost:3333/api |
+| Documentação interativa (Swagger) | http://localhost:3333/docs |
+| Verificação de saúde | http://localhost:3333/health |
+
+Para executar Node e Python simultaneamente, use outra porta para um deles e
+ajuste `VITE_API_URL` no frontend local correspondente.
+
+### Testes do backend Python
+
+Dentro de `backend-python`, com o ambiente virtual instalado:
+
+```powershell
+.venv\Scripts\python.exe -m pytest -q
+```
+
+Os testes PostgreSQL exigem configuração adicional. Consulte a
+[documentação do backend Python](./backend-python/README.md) para instruções,
+endpoints e diferenças em relação ao Node.
+
+## Como rodar o backend anterior (Node.js)
 
 ### 1. Banco de dados
 
@@ -88,7 +202,7 @@ npm run dev                # sobe o frontend em http://localhost:5173
 
 Acesse `http://localhost:5173` no navegador.
 
-## Scripts úteis (backend)
+## Scripts úteis (backend anterior — Node.js)
 
 | Comando | Descrição |
 |---|---|
