@@ -83,6 +83,21 @@ isolado, conta de homologação e configuração do ambiente.
 
 ### Execução manual
 
+A `.venv` local ja esta preparada. No PowerShell:
+
+```powershell
+cd backend-python
+.\.venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload --port 3333
+```
+
+Se o PowerShell bloquear a ativacao, execute
+`Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` e tente novamente.
+Isso vale apenas no terminal atual. Para sair da venv, use `deactivate`.
+O PostgreSQL precisa estar ativo e provisionado.
+
+Para uma instalacao nova, siga os passos abaixo.
+
 Na raiz do repositório, com Python 3.12+ instalado:
 
 ```powershell
