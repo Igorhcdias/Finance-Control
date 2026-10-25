@@ -63,7 +63,15 @@ def test_legacy_read_parity_and_credentials(client, auth, category):
             for path, params in routes:
                 old, new = legacy.get(path, headers=auth, params=params), client.get(path, headers=auth, params=params)
                 assert old.status_code == new.status_code == 200, (path, old.text, new.text)
-                assert old.json() == new.json(), (path, old.json(), new.json())
+                expected, actual = old.json(), new.json()
+                if path == "/api/dashboard/summary":
+                    # Dashboard now filters its five recent records and adds explicit
+                    # monthly budget/global reserve metadata. This fixture has only
+                    # three records, so filtering the legacy result is lossless.
+                    expected["recentTransactions"] = [item for item in expected["recentTransactions"] if params["startDate"] <= item["date"][:10] <= params["endDate"]]
+                    assert actual.pop("budgetPeriod") == {"startDate": "2026-09-01", "endDate": "2026-09-30"}
+                    assert actual.pop("reserves") == {"totalAmount": 10.25, "count": 1}
+                assert expected == actual, (path, expected, actual)
     finally:
         process.terminate()
         process.wait(timeout=10)

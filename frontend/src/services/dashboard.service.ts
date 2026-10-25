@@ -2,13 +2,13 @@ import { api } from './api';
 import { ChartPoint, DashboardSummary, MonthlyComparisonData } from '../types';
 
 export const dashboardService = {
-  async getSummary(startDate?: string, endDate?: string): Promise<DashboardSummary> {
-    const { data } = await api.get<DashboardSummary>('/dashboard/summary', { params: { startDate, endDate } });
+  async getSummary(startDate?: string, endDate?: string, signal?: AbortSignal): Promise<DashboardSummary> {
+    const { data } = await api.get<DashboardSummary>('/dashboard/summary', { params: { startDate, endDate }, signal });
     return data;
   },
 
-  async getChart(startDate?: string, endDate?: string): Promise<ChartPoint[]> {
-    const { data } = await api.get<ChartPoint[]>('/dashboard/chart', { params: { startDate, endDate } });
+  async getChart(startDate?: string, endDate?: string, signal?: AbortSignal): Promise<ChartPoint[]> {
+    const { data } = await api.get<ChartPoint[]>('/dashboard/chart', { params: { startDate, endDate }, signal });
     return data;
   },
 

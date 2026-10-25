@@ -5,7 +5,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../contexts/ToastContext';
 import { getApiErrorMessage } from '../services/api';
 
 const loginFormSchema = z.object({
@@ -17,9 +16,9 @@ type LoginFormData = z.infer<typeof loginFormSchema>;
 
 export function LoginPage() {
   const { login } = useAuth();
-  const { showToast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
     register,
@@ -28,12 +27,13 @@ export function LoginPage() {
   } = useForm<LoginFormData>({ resolver: zodResolver(loginFormSchema) });
 
   async function onSubmit(data: LoginFormData) {
+    setLoginError(null);
     setIsSubmitting(true);
     try {
       await login(data.email, data.password);
       navigate('/dashboard');
     } catch (error) {
-      showToast(getApiErrorMessage(error, 'Não foi possível entrar'), 'error');
+      setLoginError(getApiErrorMessage(error, 'Não foi possível entrar. Tente novamente.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -42,6 +42,11 @@ export function LoginPage() {
   return (
     <AuthLayout title="Entrar" subtitle="Acesse sua conta para controlar suas finanças">
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        {loginError && (
+          <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {loginError}
+          </div>
+        )}
         <div className="mb-4">
           <label className="label-field" htmlFor="email">E-mail</label>
           <input
