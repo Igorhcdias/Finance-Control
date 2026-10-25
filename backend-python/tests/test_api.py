@@ -141,7 +141,7 @@ def test_budget_thresholds_and_decimal_rounding(client, auth, category):
 def test_advisory_failure_does_not_undo_transaction(client, auth, category, monkeypatch):
     def fail(*args):
         raise RuntimeError("isolated simulated failure")
-    monkeypatch.setattr("app.dashboard.budget_progress", fail)
+    monkeypatch.setattr("app.dashboard.service.budget_progress", fail)
     response = client.post("/api/transactions", headers=auth, json=transaction(category))
     assert response.status_code == 201
     assert "Não foi possível consultar" in response.json()["budgetWarning"]

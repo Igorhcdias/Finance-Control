@@ -1,5 +1,41 @@
 # Validação da migração
 
+## Reorganização por funcionalidade — 24/10/2026
+
+Backend separado em `auth`, `users`, `categories`, `transactions`, `investments`
+e `dashboard`, com rotas, schemas, serviços e consultas por responsabilidade.
+Infraestrutura e modelos SQLAlchemy preservados; comandos de início e deploy
+não foram alterados. O frontend não foi modificado nesta reorganização.
+
+- Comparação em memória com o OpenAPI da versão anterior (`HEAD`): igualdade
+  integral, incluindo os 14 caminhos, 21 operações, schemas e respostas.
+  A comparação não abre conexão com banco.
+- Suíte existente: **13 aprovados, 15 pulados** usando SQLite em memória.
+  `TEST_DATABASE_URL` foi removida do ambiente do processo de testes.
+  As variantes PostgreSQL e a comparação com Node não foram executadas nesta
+  rodada; os resultados históricos abaixo não substituem essa limitação.
+- O único ajuste nos testes existentes foi o novo caminho do monkeypatch de
+  falha de orçamento: `app.dashboard.service.budget_progress`.
+- O sandbox Windows impediu a inicialização do socket interno do asyncio no
+  TestClient. A mesma suíte passou fora do sandbox, sem acessar banco real.
+- Permanece o aviso de depreciação do httpx no TestClient da Starlette instalada.
+- Não houve commit, push, deploy ou alteração do banco/esquema nesta rodada.
+
+Comando executado na pasta `backend-python`, com Python 3.12.10:
+
+```powershell
+$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD='1'
+Remove-Item Env:TEST_DATABASE_URL -ErrorAction SilentlyContinue
+..\.tools\python\python.exe -m pytest -q -p no:cacheprovider
+```
+
+O autoload de plugins externos foi desabilitado somente para essa execução.
+O teste usa as fixtures existentes de `tests/conftest.py` e mantém o override
+de `get_db`, sem carregar a URL de produção para acesso a dados.
+
+O registro a seguir descreve a migração original de 22/10, antes dessa
+reorganização.
+
 Executada em 22/10/2026, exclusivamente na branch `Igor`.
 
 ## Arquitetura e plano executado

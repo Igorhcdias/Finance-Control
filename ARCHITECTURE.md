@@ -2,6 +2,26 @@
 
 Este documento explica as decisões arquiteturais do projeto — o "porquê" por trás de cada camada e padrão utilizado.
 
+## Backend ativo: FastAPI
+
+O backend ativo está em `backend-python`. A organização por funcionalidade reúne
+`auth`, `users`, `categories`, `transactions`, `investments` e `dashboard`.
+Cada módulo separa HTTP (`router.py`), entradas (`schemas.py`, quando necessário),
+regras (`service.py`) e consultas (`repository.py`). Auth reutiliza o repositório
+de usuários. `common/` concentra dependências, validação e persistência comuns.
+Configuração, segurança, modelos e ciclo da sessão ficam compartilhados em `app/`.
+
+O fluxo é router → service → repository/helpers de persistência → SQLAlchemy.
+Não há interfaces ou controllers intermediários: a escala atual permite funções
+diretas. As consultas preservam os filtros por proprietário; os cálculos e os
+limites de commit permanecem os anteriores. `app/routers.py` registra as rotas sob
+`/api`; inicialização e deploy continuam usando `app.main:app` ou `python -m app`.
+
+Veja a árvore de pastas e o roteiro para adicionar funcionalidades no
+[README do backend Python](backend-python/README.md#estrutura).
+As seções de Prisma/Express abaixo são a referência histórica do backend Node;
+as seções de frontend continuam descrevendo o cliente React.
+
 ## Visão Geral
 
 ```

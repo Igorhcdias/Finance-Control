@@ -1,8 +1,8 @@
-# Backend Python — migração na branch Igor
+# Backend Python
 
-Implementação paralela em Python 3.12+, FastAPI, SQLAlchemy 2 e Pydantic.
-O backend Node em `../backend` continua intacto. Nenhuma configuração de
-hospedagem, frontend ou banco de produção foi substituída.
+Backend ativo em Python 3.12+, FastAPI, SQLAlchemy 2 e Pydantic.
+A organização abaixo não muda a configuração de hospedagem, o banco ou os
+comandos de inicialização. As referências ao Node documentam a migração original.
 
 ## Executar localmente
 
@@ -50,15 +50,66 @@ e definir uma baseline revisada, sem recriar tabelas existentes.
 
 ## Estrutura
 
-- `app/routers.py`: contratos HTTP e dependências por requisição.
-- `app/schemas.py`: validação Pydantic, limites e campos opcionais.
-- `app/models.py`: quatro entidades e relacionamentos SQLAlchemy.
-- `app/services.py`: autenticação, propriedade dos registros e CRUD.
-- `app/dashboard.py`: agregações Decimal, períodos, gráficos e comparação.
-- `app/security.py`: bcrypt, JWT HS256 e proteção Bearer.
-- `app/serialization.py`: datas e valores compatíveis com Prisma.
-- `app/config.py`, `database.py`, `errors.py`, `main.py`: infraestrutura.
-- `tests/`: testes de API, PostgreSQL e comparação real com Express.
+```text
+app/
+  auth/           # Cadastro e login; consulta contas via users/repository.py
+  users/          # Perfil, senha e consultas de contas
+  categories/     # Categorias e restrições de exclusão
+  transactions/   # Lançamentos, filtros, paginação e aviso de orçamento
+  investments/    # Reservas
+  dashboard/      # Resumo, gráficos, orçamento e comparação mensal
+  common/
+    dependencies.py # Db e Owner para injeção no FastAPI
+    schemas.py      # Tipos e validadores compartilhados
+    values.py       # Conversão de entradas e arredondamento monetário
+    persistence.py # Salvamento, busca por proprietário e exclusão
+  routers.py      # Registro dos seis routers com prefixo /api
+  models.py       # Mapeamento único das quatro entidades SQLAlchemy
+  database.py     # Engine e sessão por requisição
+  config.py       # Variáveis de ambiente
+  security.py     # bcrypt, JWT HS256 e proteção Bearer
+  serialization.py # Datas e valores compatíveis com o contrato existente
+  errors.py       # Erro de aplicação
+  main.py         # Factory, middlewares e tratamento HTTP de erros
+  __main__.py     # Entrada de python -m app
+tests/
+```
+
+Cada funcionalidade tem `router.py` (HTTP) e `service.py` (regras e coordenação).
+`schemas.py` mantém as entradas Pydantic junto da funcionalidade; dashboard usa
+somente os tipos compartilhados de datas e parâmetros simples, sem criar um
+arquivo vazio. `repository.py` contém consultas SQLAlchemy. Auth reutiliza o
+repositório de usuários, em vez de duplicar consultas de contas.
+
+Fluxo: **router → service → repository / common.persistence → sessão SQLAlchemy**.
+Os routers não fazem consultas SQL. Os services definem quando salvar ou excluir;
+os helpers compartilhados preservam os limites de commit já existentes e as
+buscas por ID e proprietário. Não há classes base de repositório nem uma camada
+de controllers que apenas repita chamadas. Os modelos permanecem juntos porque
+são quatro entidades relacionadas e compartilham a mesma metadata.
+
+As consultas agregadas do dashboard estão em `dashboard/repository.py`; períodos,
+percentuais, preenchimento dos gráficos e formatação continuam em `service.py`.
+Transações consultam esse serviço para o aviso de orçamento após salvar, mantendo
+a regra de que uma falha no aviso não desfaz o lançamento.
+
+### Como estender
+
+1. Adicione ou ajuste o schema de entrada na funcionalidade correspondente.
+2. Escreva consultas no repositório, sempre restringindo dados ao usuário quando
+   aplicável. Para registros existentes, use a busca por proprietário de
+   `common.persistence`, preservando o comportamento de 404.
+3. Implemente a regra no service, incluindo validações de vínculo e os limites
+   de persistência. Não mova decisões de negócio para o router.
+4. Exponha a operação no router usando `Db` e, para rotas protegidas, `Owner`.
+   Um novo módulo deve ser registrado em `app/routers.py`; não repita `/api`.
+5. Cubra comportamento, autorização e contrato JSON em `tests/`. Use SQLite em
+   memória ou PostgreSQL local isolado; nunca o banco publicado.
+
+Os antigos módulos concentradores `app/services.py`, `app/schemas.py` e
+`app/dashboard.py` foram substituídos pelos módulos acima. Imports internos de
+scripts ou testes novos devem usar, por exemplo, `app.transactions.service`.
+`app.main:app` e `python -m app` continuam sendo as entradas da aplicação.
 
 ## Endpoints preservados
 
