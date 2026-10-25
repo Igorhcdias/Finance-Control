@@ -148,9 +148,25 @@ pagamento; despesas aceitam débito, crédito ou ausência. Orçamentos alertam 
 
 Saldo = receitas históricas − despesas históricas − todas as reservas,
 inclusive futuras. A faixa histórica 2000-01-01 a 2100-01-01 foi mantida do
-Node. Totais do período usam limites inclusivos; recentes são cinco registros
-sem filtro de período. Gráficos preenchem lacunas, usam dias até 31 dias de
-diferença e meses para intervalos maiores; sem filtro mostram seis meses.
+Node. Totais do período usam limites inclusivos; recentes são até cinco registros
+do mesmo período, ordenados por data, criação e ID decrescentes, com categoria
+carregada na mesma consulta. Gráficos agregam no SQL e preenchem lacunas, usam
+dias até 31 dias de diferença e meses para intervalos maiores; sem filtro mostram
+seis meses. O frontend envia datas civis explícitas para o período selecionado.
+
+O resumo mantém seus campos anteriores e acrescenta:
+
+- `reserves: { totalAmount: number, count: number }`: soma e quantidade de todas
+  as reservas do usuário, independentemente do filtro. Não carrega a lista de reservas.
+- `budgetPeriod: { startDate: "AAAA-MM-DD", endDate: "AAAA-MM-DD" }`: mês civil
+  completo da data final do período. `budgetProgress` usa esse mês, inclusive em
+  filtros parciais ou de vários meses, para comparar despesas com o limite mensal
+  existente. A interface identifica explicitamente esse intervalo distinto.
+
+Essas mudanças corrigem recentes fora do filtro e a comparação de despesas de
+vários meses com um único limite mensal. Não alteram os limites, os alertas, o
+cálculo de saldo nem o esquema do banco. Quando o período é um mês completo,
+categorias e orçamento reutilizam a mesma agregação de despesas.
 
 Hashes bcrypt existentes continuam válidos, inclusive a truncagem UTF-8 de
 72 bytes do bcryptjs. JWTs HS256 existentes continuam válidos com o mesmo
@@ -165,7 +181,8 @@ Diferenças deliberadas e limites de validação:
 - Valores de lançamentos e orçamentos acima do NUMERIC(12,2) retornam 422;
   casas extras são arredondadas como no PostgreSQL. Reservas exigem duas
   casas, como antes. `NaN` e infinito são rejeitados.
-- Datas inválidas do dashboard retornam 422 com mensagem em vez de um erro
+- Datas inválidas ou intervalo com início posterior ao fim no dashboard retornam
+  422 com mensagem em vez de um erro
   interno do Prisma. Mensagens detalhadas de validação diferem de Zod.
 - Pydantic EmailStr normaliza o domínio do email em novas entradas.
 - Calendários usam UTC de forma consistente. O gráfico sem filtro do Node

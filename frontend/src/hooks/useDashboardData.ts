@@ -1,44 +1,52 @@
-import { useEffect, useState } from 'react';
-import { ChartPoint, DashboardSummary } from '../types';
+﻿import { useCallback, useEffect, useState } from 'react';
+import type { ChartPoint, DashboardSummary } from '../types';
 import { dashboardService } from '../services/dashboard.service';
+import { getApiErrorMessage } from '../services/api';
 
-/**
- * Hook customizado: extrai a lógica de "buscar dados + estado de
- * loading/erro" da página, seguindo o princípio de que componentes de
- * página devem cuidar de layout, não de orquestração de chamadas assíncronas.
- */
-export function useDashboardData(startDate?: string, endDate?: string) {
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [chart, setChart] = useState<ChartPoint[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface DashboardState {
+  key: string;
+  summary: DashboardSummary | null;
+  chart: ChartPoint[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export function useDashboardData(startDate: string, endDate: string) {
+  const [revision, setRevision] = useState(0);
+  const key = `${startDate}/${endDate}/${revision}`;
+  const [state, setState] = useState<DashboardState>({ key, summary: null, chart: [], isLoading: true, error: null });
+  const refresh = useCallback(() => setRevision((value) => value + 1), []);
 
   useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
+    setState({ key, summary: null, chart: [], isLoading: true, error: null });
 
     async function loadData() {
-      setError(null);
       try {
-        const [summaryData, chartData] = await Promise.all([
-          dashboardService.getSummary(startDate, endDate),
-          dashboardService.getChart(startDate, endDate),
+        const [summary, chart] = await Promise.all([
+          dashboardService.getSummary(startDate, endDate, controller.signal),
+          dashboardService.getChart(startDate, endDate, controller.signal),
         ]);
-        if (isMounted) {
-          setSummary(summaryData);
-          setChart(chartData);
+        if (!controller.signal.aborted) setState({ key, summary, chart, isLoading: false, error: null });
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setState({ key, summary: null, chart: [], isLoading: false, error: getApiErrorMessage(error, 'Não foi possível carregar os dados do dashboard.') });
+          controller.abort();
         }
-      } catch {
-        if (isMounted) setError('Não foi possível carregar os dados do dashboard');
-      } finally {
-        if (isMounted) setIsLoading(false);
       }
     }
 
-    loadData();
-    return () => {
-      isMounted = false;
-    };
-  }, [startDate, endDate]);
+    void loadData();
+    return () => controller.abort();
+  }, [startDate, endDate, key]);
 
-  return { summary, chart, isLoading, error };
+  // Never associate the previous response with a newly selected period, even for one render.
+  const current = state.key === key;
+  return {
+    summary: current ? state.summary : null,
+    chart: current ? state.chart : [],
+    error: current ? state.error : null,
+    isLoading: !current || state.isLoading,
+    refresh,
+  };
 }

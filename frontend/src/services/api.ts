@@ -11,6 +11,7 @@ import axios from 'axios';
  */
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3333/api',
+  timeout: 15000,
 });
 
 api.interceptors.request.use((config) => {
@@ -24,7 +25,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthRequest = /\/auth\/(login|register)\/?$/.test(error.config?.url ?? '');
+    if (error.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem('@finance-control:token');
       localStorage.removeItem('@finance-control:user');
       if (!window.location.pathname.includes('/login')) {
@@ -41,6 +43,12 @@ api.interceptors.response.use(
  */
 export function getApiErrorMessage(error: unknown, fallback = 'Ocorreu um erro inesperado'): string {
   if (axios.isAxiosError(error)) {
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      return 'O servidor demorou para responder. Tente novamente em instantes.';
+    }
+    if (!error.response) {
+      return 'Não foi possível conectar ao servidor. Verifique sua conexão e se o backend está em execução.';
+    }
     return error.response?.data?.message ?? fallback;
   }
   return fallback;

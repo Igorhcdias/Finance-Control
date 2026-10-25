@@ -60,6 +60,8 @@ export interface CategoryBudgetProgress {
 }
 
 export interface DashboardSummary {
+  reserves?: { totalAmount: number; count: number };
+  budgetPeriod?: { startDate: string; endDate: string };
   expensesByPaymentMethod: {
     debit: number;
     credit: number;

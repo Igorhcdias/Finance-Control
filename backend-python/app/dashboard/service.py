@@ -34,9 +34,11 @@ def category_expenses(db, user_id, start, end):
     return [{"categoryId": r[0], "categoryName": r[1], "categoryColor": r[2], "amount": r[3], "percentage": rounded(r[3] / overall * 100) if overall else 0} for r in rows]
 
 
-def budget_progress(db, user_id, start, end):
+def budget_progress(db, user_id, start, end, expenses=None):
     categories = repository.budget_categories(db, user_id)
-    spent = {c["categoryId"]: c["amount"] for c in category_expenses(db, user_id, start, end)}
+    if expenses is None:
+        expenses = category_expenses(db, user_id, start, end)
+    spent = {c["categoryId"]: c["amount"] for c in expenses}
     result = []
     for c in categories:
         amount = spent.get(c.id, ZERO)
@@ -54,19 +56,39 @@ def numbers(value):
     return value
 
 
+def validate_period(start, end):
+    if start and end and start > end:
+        raise AppError("A data inicial deve ser anterior ou igual à data final", 422)
+
+
 def summary(db, user_id, start=None, end=None):
     default_start, default_end = period(today())
     start, end = start or default_start, end or default_end
+    validate_period(start, end)
     income, expense = repository.total(db, user_id, "INCOME", start, end), repository.total(db, user_id, "EXPENSE", start, end)
-    invested = repository.invested(db, user_id)
+    invested, reserve_count = repository.reserves(db, user_id)
     # Preserve the original Node all-time range.
     balance = repository.total(db, user_id, "INCOME", date(2000, 1, 1), date(2100, 1, 1)) - repository.total(db, user_id, "EXPENSE", date(2000, 1, 1), date(2100, 1, 1)) - invested
-    recent = repository.recent_transactions(db, user_id)
+    recent = repository.recent_transactions(db, user_id, start, end)
     methods = {"debit": ZERO, "credit": ZERO, "unspecified": ZERO}
     rows = repository.payment_totals(db, user_id, start, end)
     for method, amount in rows:
         methods[{"DEBIT": "debit", "CREDIT": "credit"}.get(method, "unspecified")] = amount
-    return numbers({"balance": balance, "periodIncome": income, "periodExpense": expense, "periodTotal": income - expense, "recentTransactions": serialize(list(recent)), "expensesByCategory": category_expenses(db, user_id, start, end), "expensesByPaymentMethod": methods, "budgetProgress": budget_progress(db, user_id, start, end)})
+    expenses = category_expenses(db, user_id, start, end)
+    budget_start, budget_end = period(end)
+    budget_expenses = expenses if (start, end) == (budget_start, budget_end) else None
+    return numbers({
+        "balance": balance,
+        "periodIncome": income,
+        "periodExpense": expense,
+        "periodTotal": income - expense,
+        "recentTransactions": serialize(list(recent)),
+        "expensesByCategory": expenses,
+        "expensesByPaymentMethod": methods,
+        "budgetProgress": budget_progress(db, user_id, budget_start, budget_end, budget_expenses),
+        "budgetPeriod": {"startDate": budget_start.isoformat(), "endDate": budget_end.isoformat()},
+        "reserves": {"totalAmount": invested, "count": reserve_count},
+    })
 
 
 def month_label(day):
@@ -74,29 +96,27 @@ def month_label(day):
 
 
 def chart(db, user_id, start=None, end=None):
+    validate_period(start, end)
     if not start or not end:
-        points = []
-        for offset in range(-5, 1):
-            first, last = period(shift_month(today(), offset))
-            points.append({"label": month_label(first), "income": repository.total(db, user_id, "INCOME", first, last), "expense": repository.total(db, user_id, "EXPENSE", first, last)})
-        return numbers(points)
-    daily = abs((end - start).days) <= 31
+        # Keep the existing six-month default when no complete range is supplied.
+        anchor = today()
+        start, end = shift_month(anchor, -5), period(anchor)[1]
+    daily = (end - start).days <= 31
     def label(day):
         return f"{day.day:02d} de {SHORT[day.month - 1]}" if daily else month_label(day)
     points = {}
     cursor = start if daily else start.replace(day=1)
     while cursor <= end:
-        points[label(cursor)] = {"income": ZERO, "expense": ZERO}
+        points[cursor] = {"income": ZERO, "expense": ZERO}
         if cursor == date.max:
             break
         if not daily and cursor.year == 9999 and cursor.month == 12:
             break
         cursor = cursor + timedelta(days=1) if daily else shift_month(cursor, 1)
-    rows = repository.transactions_in_period(db, user_id, start, end)
-    for t in rows:
-        point = points.setdefault(label(t.date), {"income": ZERO, "expense": ZERO})
-        point["income" if t.type == "INCOME" else "expense"] += t.amount
-    return numbers([{"label": key, **value} for key, value in points.items()])
+    for row in repository.chart_totals(db, user_id, start, end, daily):
+        bucket = date(int(row[0]), int(row[1]), int(row[2]) if daily else 1)
+        points[bucket]["income" if row[-2] == "INCOME" else "expense"] = row[-1]
+    return numbers([{"label": label(day), **value} for day, value in points.items()])
 
 
 def percentage(current, baseline):
