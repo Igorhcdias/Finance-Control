@@ -8,6 +8,7 @@ import { getApiErrorMessage } from '../../services/api';
 import { categoryService } from '../../services/category.service';
 import { transactionService } from '../../services/transaction.service';
 import { Category, TransactionType } from '../../types';
+import { CategoryInput } from '../../services/category.service';
 
 interface NewTransactionActionProps {
   onCreated: () => void;
@@ -67,12 +68,11 @@ export function NewTransactionAction({ onCreated }: NewTransactionActionProps) {
   }, []);
 
   async function createTransaction(data: TransactionFormData) {
-    if (!type) return;
     savingRef.current = true;
     setIsSaving(true);
     try {
-      const created = await transactionService.create({ ...data, type });
-      const successMessage = type === 'INCOME' ? 'Receita cadastrada com sucesso.' : 'Despesa cadastrada com sucesso.';
+      const created = await transactionService.create(data);
+      const successMessage = data.type === 'INCOME' ? 'Receita cadastrada com sucesso.' : 'Despesa cadastrada com sucesso.';
       showToast(
         created.budgetWarning ? `${successMessage} ${created.budgetWarning}` : successMessage,
         created.budgetWarning ? 'warning' : 'success',
@@ -82,6 +82,13 @@ export function NewTransactionAction({ onCreated }: NewTransactionActionProps) {
       savingRef.current = false;
       setIsSaving(false);
     }
+  }
+
+  async function createCategory(input: CategoryInput) {
+    const created = await categoryService.create(input);
+    setCategories((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
+    showToast('Categoria criada com sucesso', 'success');
+    return created;
   }
 
   const showForm = isOpen && type !== null && categoryStatus === 'loaded' && categories.length > 0;
@@ -147,9 +154,10 @@ export function NewTransactionAction({ onCreated }: NewTransactionActionProps) {
 
       <TransactionFormModal
         isOpen={showForm}
-        type={type ?? 'INCOME'}
+        initialType={type ?? 'INCOME'}
         transaction={null}
         categories={categories}
+        onCreateCategory={createCategory}
         onClose={closeAction}
         onSubmit={createTransaction}
         defaultDate={defaultDate}
