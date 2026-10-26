@@ -64,13 +64,14 @@ app/
     values.py       # Conversão de entradas e arredondamento monetário
     persistence.py # Salvamento, busca por proprietário e exclusão
   routers.py      # Registro dos seis routers com prefixo /api
+  http_errors.py  # Tradução centralizada de erros de aplicação, validação e integridade
   models.py       # Mapeamento único das quatro entidades SQLAlchemy
   database.py     # Engine e sessão por requisição
   config.py       # Variáveis de ambiente
   security.py     # bcrypt, JWT HS256 e proteção Bearer
   serialization.py # Datas e valores compatíveis com o contrato existente
   errors.py       # Erro de aplicação
-  main.py         # Factory, middlewares e tratamento HTTP de erros
+  main.py         # Factory da aplicação, CORS, barras finais e health
   __main__.py     # Entrada de python -m app
 tests/
 ```
@@ -84,9 +85,40 @@ repositório de usuários, em vez de duplicar consultas de contas.
 Fluxo: **router → service → repository / common.persistence → sessão SQLAlchemy**.
 Os routers não fazem consultas SQL. Os services definem quando salvar ou excluir;
 os helpers compartilhados preservam os limites de commit já existentes e as
-buscas por ID e proprietário. Não há classes base de repositório nem uma camada
-de controllers que apenas repita chamadas. Os modelos permanecem juntos porque
-são quatro entidades relacionadas e compartilham a mesma metadata.
+buscas por ID e proprietário. `http_errors.py` traduz erros de domínio,
+validação e integridade para o formato HTTP `{ "message": "..." }`; a montagem
+da aplicação e os middlewares permanecem em `main.py`.
+
+Por exemplo, `POST /api/transactions` passa por
+`transactions.router.create_transaction`, que recebe `Db` e `Owner` injetados
+pelo FastAPI e chama `transactions.service.save_transaction`. O service valida
+o vínculo da categoria por `categories.repository.find_for_user`, aplica as
+regras do lançamento e persiste via `common.persistence.save`; por fim,
+`serialization.py` converte o registro para o JSON compatível com o frontend.
+As exceções levantadas ao longo do fluxo são convertidas em respostas HTTP por
+`http_errors.py`, sem colocar tratamento HTTP dentro dos services.
+
+Não há classes base de repositório nem uma camada de controllers que apenas
+repita chamadas. Os modelos permanecem juntos porque são quatro entidades
+relacionadas e compartilham a mesma metadata.
+
+### Decisões e limites arquiteturais
+
+- Os módulos por funcionalidade já separam HTTP, regras e consultas; uma
+  reorganização para uma árvore `core/database/modules` não acrescentaria
+  isolamento ou testabilidade suficiente para justificar o risco de imports.
+- `common.dependencies` injeta sessão e identidade do usuário pelo FastAPI.
+  Os testes substituem `get_db` por SQLite em memória ou PostgreSQL local
+  isolado, sem depender do Neon.
+- A persistência compartilhada concentra operações realmente comuns, mas não
+  cria interfaces genéricas ou classes abstratas para cada repositório.
+- `dashboard.service` reúne cálculos coerentes de dashboard. Sua extração em
+  muitas classes/funções menores só deve ocorrer quando houver uma regra ou
+  teste isolável que se beneficie disso.
+- Como melhoria futura, tipar gradualmente as fronteiras dos services e
+  repositories pode ajudar manutenção estática. Isso não exige alteração de
+  contratos e não foi expandido nesta refatoração para evitar mudanças
+  mecânicas sem ganho funcional demonstrável.
 
 As consultas agregadas do dashboard estão em `dashboard/repository.py`; períodos,
 percentuais, preenchimento dos gráficos e formatação continuam em `service.py`.

@@ -6,9 +6,10 @@ import { getDashboardPeriod, validateDashboardPeriod, type DashboardPeriod, type
 interface PeriodFilterProps {
   period: DashboardPeriod;
   onChange: (period: DashboardPeriod) => void;
+  heading?: string;
 }
 
-export function PeriodFilter({ period, onChange }: PeriodFilterProps) {
+export function PeriodFilter({ period, onChange, heading = 'Período da visão geral' }: PeriodFilterProps) {
   const [preset, setPreset] = useState<DashboardPreset>('lastSixMonths');
   const [draft, setDraft] = useState(period);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +39,7 @@ export function PeriodFilter({ period, onChange }: PeriodFilterProps) {
         <div className="flex min-w-0 items-start gap-3">
           <CalendarDays size={20} className="mt-0.5 shrink-0 text-primary-600" aria-hidden="true" />
           <div className="min-w-0">
-            <label htmlFor="dashboard-period" className="block text-sm font-medium text-gray-900">Período da visão geral</label>
+            <label htmlFor="dashboard-period" className="block text-sm font-medium text-gray-900">{heading}</label>
             <p className="mt-1 text-xs leading-5 text-gray-500">{formatDate(period.startDate)} a {formatDate(period.endDate)} · pela data do lançamento</p>
           </div>
         </div>

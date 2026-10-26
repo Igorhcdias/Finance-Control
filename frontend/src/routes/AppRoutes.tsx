@@ -5,8 +5,7 @@ import { MainLayout } from '../layouts/MainLayout';
 import { LoginPage } from '../pages/LoginPage';
 import { RegisterPage } from '../pages/RegisterPage';
 import { DashboardPage } from '../pages/DashboardPage';
-import { IncomesPage } from '../pages/IncomesPage';
-import { ExpensesPage } from '../pages/ExpensesPage';
+import { TransactionsPage } from '../components/TransactionsPage';
 import { CategoriesPage } from '../pages/CategoriesPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
@@ -28,8 +27,9 @@ export function AppRoutes() {
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/investimento" element={<InvestmentPage />} />
-          <Route path="/receitas" element={<IncomesPage />} />
-          <Route path="/despesas" element={<ExpensesPage />} />
+          <Route path="/lancamentos" element={<TransactionsPage />} />
+          <Route path="/receitas" element={<Navigate to="/lancamentos" replace />} />
+          <Route path="/despesas" element={<Navigate to="/lancamentos" replace />} />
           <Route path="/categorias" element={<CategoriesPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
         </Route>

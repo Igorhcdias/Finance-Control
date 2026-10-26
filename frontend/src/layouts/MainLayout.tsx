@@ -1,8 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
-  ArrowDownCircle,
-  ArrowUpCircle,
+  ArrowLeftRight,
   Tags,
   User as UserIcon,
   LogOut,
@@ -17,8 +16,7 @@ import {useState} from "react";
 const navItems = [
   { to: '/investimento', label: 'Investimento', icon: PiggyBank },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/receitas', label: 'Receitas', icon: ArrowUpCircle },
-  { to: '/despesas', label: 'Despesas', icon: ArrowDownCircle },
+  { to: '/lancamentos', label: 'Lançamentos', icon: ArrowLeftRight },
   { to: '/categorias', label: 'Categorias', icon: Tags },
   { to: '/perfil', label: 'Perfil', icon: UserIcon },
 ];

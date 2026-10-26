@@ -25,10 +25,11 @@ export function useCategories() {
     loadCategories();
   }, [loadCategories]);
 
-  async function createCategory(input: CategoryInput) {
+  async function createCategory(input: CategoryInput): Promise<Category> {
     const created = await categoryService.create(input);
     setCategories((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
     showToast('Categoria criada com sucesso', 'success');
+    return created;
   }
 
   async function updateCategory(id: string, input: CategoryInput) {

@@ -4,10 +4,11 @@ import { z } from 'zod';
 import { useEffect } from 'react';
 import { Modal } from './Modal';
 import { Category } from '../types';
+import { categoryNameSchema } from '../schemas/category.schema';
 
 const categoryFormSchema = z
   .object({
-    name: z.string().trim().min(2, 'Nome deve ter no mínimo 2 caracteres').max(50),
+    name: categoryNameSchema,
     color: z.string().regex(/^#([0-9A-Fa-f]{6})$/, 'Escolha uma cor'),
     hasBudgetLimit: z.boolean().default(false),
     budgetLimit: z.string().optional(),
@@ -171,4 +172,3 @@ export function CategoryFormModal({ isOpen, category, onClose, onSubmit }: Categ
     </Modal>
   );
 }
-
