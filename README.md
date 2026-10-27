@@ -83,18 +83,30 @@ isolado, conta de homologação e configuração do ambiente.
 
 ### Execução manual
 
-A `.venv` local ja esta preparada. No PowerShell:
+Na raiz do projeto, ative a `.venv` e inicie o backend:
 
 ```powershell
-cd backend-python
+cd backend
 .\.venv\Scripts\Activate.ps1
 uvicorn app.main:app --reload --port 3333
 ```
 
-Se o PowerShell bloquear a ativacao, execute
-`Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` e tente novamente.
-Isso vale apenas no terminal atual. Para sair da venv, use `deactivate`.
-O PostgreSQL precisa estar ativo e provisionado.
+A API l? `backend/.env`, incluindo a conex?o com o Neon. Mantenha o terminal
+aberto; `--reload` reinicia a API quando o c?digo muda. Use `Ctrl+C` para parar
+e `deactivate` para sair da `.venv`.
+
+Se o PowerShell bloquear a ativa??o, execute
+`Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` nesse terminal e
+ative novamente. Sem ativa??o, dentro de `backend`, tamb?m ? poss?vel usar:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 3333
+```
+
+N?o inicie simultaneamente com `Start-Local.ps1`, pois ambos usam a porta 3333.
+Se esse script j? estiver rodando, use `.\scripts\Stop-Local.ps1` na raiz antes
+de iniciar manualmente. A parada tamb?m encerra o frontend; para inici?-lo
+novamente, execute `cd frontend` e `npm.cmd run dev` em outro terminal na raiz.
 
 Para uma instalacao nova, siga os passos abaixo.
 
@@ -130,6 +142,11 @@ na porta 55432, use o script e o [guia local](./docs/LOCAL-FASTAPI.md).
 Veja também as [orientações de banco](./backend-python/README.md#banco-e-configuração).
 
 Dentro de `backend-python`, inicie a API:
+
+
+```Para conectar com o banco use o seguinte comando na raiz do projeto:
+.\scripts\Start-Local.ps1
+```
 
 ```powershell
 .venv\Scripts\python.exe -m app

@@ -9,7 +9,7 @@ foreach ($name in @('fastapi-local', 'react-local')) {
         $service = Get-CimInstance Win32_Process -Filter "ProcessId = $serviceId"
         $expectedPath = if ($name -eq 'fastapi-local') { Join-Path $toolsDir 'python\python.exe' } else { (Get-Command node.exe).Source }
         $expectedArgs = if ($name -eq 'fastapi-local') { '*-m app*' } else { '*frontend\node_modules\vite\bin\vite.js*--port 5173*' }
-        if ($service -and $service.ExecutablePath -eq $expectedPath -and $service.CommandLine -like $expectedArgs) {
+        if ($service -and $service.ExecutablePath -eq $expectedPath -and ($service.CommandLine -like $expectedArgs -or ($name -eq 'fastapi-local' -and $service.CommandLine -like '*backend\scripts\run_local.py*'))) {
             Stop-Process -Id $serviceId
             Write-Host "$name encerrado."
         } elseif ($service) {
