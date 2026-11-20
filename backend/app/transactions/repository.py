@@ -24,3 +24,12 @@ def list_page(db, user_id, filters):
     total = db.scalar(select(func.count()).select_from(query.subquery()))
     items = db.scalars(query.order_by(Transaction.date.desc()).offset((filters.page - 1) * filters.pageSize).limit(filters.pageSize)).all()
     return total, items
+
+
+def find_signatures_in_range(db, user_id, start_date, end_date):
+    query = select(Transaction.date, Transaction.amount, Transaction.type, Transaction.description).where(
+        Transaction.userId == user_id,
+        Transaction.date >= start_date,
+        Transaction.date <= end_date,
+    )
+    return list(db.execute(query).all())

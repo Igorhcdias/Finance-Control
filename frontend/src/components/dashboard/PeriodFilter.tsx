@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { CalendarDays } from 'lucide-react';
 import { formatDate } from '../../utils/format';
 import { getDashboardPeriod, validateDashboardPeriod, type DashboardPeriod, type DashboardPreset } from '../../utils/dashboard';
@@ -13,6 +13,20 @@ export function PeriodFilter({ period, onChange, heading = 'Período da visão g
   const [preset, setPreset] = useState<DashboardPreset>('lastSixMonths');
   const [draft, setDraft] = useState(period);
   const [error, setError] = useState<string | null>(null);
+  const presetRef = useRef(preset);
+  presetRef.current = preset;
+
+  useEffect(() => {
+    setDraft(period);
+    setError(null);
+    const activePreset = presetRef.current;
+    if (activePreset !== 'custom') {
+      const presetPeriod = getDashboardPeriod(activePreset);
+      if (period.startDate !== presetPeriod.startDate || period.endDate !== presetPeriod.endDate) {
+        setPreset('custom');
+      }
+    }
+  }, [period]);
 
   function selectPreset(value: DashboardPreset) {
     setPreset(value);

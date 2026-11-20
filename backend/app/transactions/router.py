@@ -12,6 +12,16 @@ def transactions(user: Owner, db: Db, filters: Annotated[s.TransactionQuery, Dep
     return services.list_transactions(db, user, filters)
 
 
+@router.post("/transactions/import/preview")
+def preview_csv_import(data: s.CsvPreviewRequest, user: Owner, db: Db):
+    return services.preview_csv_import(db, user, data)
+
+
+@router.post("/transactions/import", status_code=201)
+def import_transactions(data: s.TransactionImportRequest, user: Owner, db: Db):
+    return services.import_transactions(db, user, data)
+
+
 @router.post("/transactions", status_code=201)
 def create_transaction(data: s.TransactionCreate, user: Owner, db: Db):
     return services.save_transaction(db, user, data)

@@ -1,5 +1,13 @@
 import { api } from './api';
-import { PaginatedResponse, PaymentMethod, Transaction, TransactionType } from '../types';
+import {
+  CsvImportResponse,
+  CsvPreviewRequest,
+  CsvPreviewResponse,
+  PaginatedResponse,
+  PaymentMethod,
+  Transaction,
+  TransactionType,
+} from '../types';
 
 export interface TransactionInput {
   paymentMethod?: PaymentMethod;
@@ -40,5 +48,15 @@ export const transactionService = {
 
   async delete(id: string): Promise<void> {
     await api.delete(`/transactions/${id}`);
+  },
+
+  async previewCsv(payload: CsvPreviewRequest): Promise<CsvPreviewResponse> {
+    const { data } = await api.post<CsvPreviewResponse>('/transactions/import/preview', payload);
+    return data;
+  },
+
+  async importTransactions(items: TransactionInput[]): Promise<CsvImportResponse> {
+    const { data } = await api.post<CsvImportResponse>('/transactions/import', { items });
+    return data;
   },
 };
