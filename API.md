@@ -99,6 +99,46 @@ Receitas não armazenam forma de pagamento. O campo também pode ser alterado no
 **Response `200`:** transação atualizada
 **Erros:** `404` não encontrada · `422` categoria inválida
 
+### `POST /transactions/import/preview`
+Analisa o conteúdo CSV de um extrato bancário (`STATEMENT`) ou fatura de cartão (`INVOICE`), separando automaticamente entradas (`INCOME`) e saídas (`EXPENSE`), sugerindo categorias e sinalizando possíveis duplicados.
+
+**Request:**
+```json
+{
+  "csvContent": "Data;Descrição;Valor\n05/09/2026;Salário;5500,00\n06/09/2026;Mercado;-120,50",
+  "sourceType": "STATEMENT",
+  "columnMapping": {
+    "date": "Data",
+    "description": "Descrição",
+    "amount": "Valor"
+  }
+}
+```
+`columnMapping` é opcional (quando omitido, o backend detecta delimitador e colunas automaticamente).
+
+**Response `200`:** objeto com `detectedDelimiter`, `headers`, `detectedMapping`, `rows`, `errors` e `summary` (`totalRows`, `incomeCount`, `expenseCount`, `incomeTotal`, `expenseTotal`, `duplicateCount`, `errorCount`).
+**Erros:** `422` CSV vazio, acima do limite ou coluna mapeada inexistente
+
+### `POST /transactions/import`
+Persiste atomicamente uma lista de lançamentos validados após a pré-visualização da importação CSV.
+
+**Request:**
+```json
+{
+  "items": [
+    {
+      "description": "Salário",
+      "amount": 5500,
+      "type": "INCOME",
+      "date": "2026-09-05",
+      "categoryId": "uuid-da-categoria"
+    }
+  ]
+}
+```
+**Response `201`:** `{ "importedCount": 1, "incomeCount": 1, "expenseCount": 0, "incomeTotal": 5500, "expenseTotal": 0, "budgetWarnings": [] }`
+**Erros:** `422` categoria inexistente/de outro usuário ou dados inválidos
+
 ### `DELETE /transactions/:id`
 **Response `204 No Content`**
 **Erros:** `404` não encontrada

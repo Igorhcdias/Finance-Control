@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useRef, useState } from 'react';
 
 type ToastVariant = 'success' | 'error' | 'info' | 'warning';
 
@@ -23,9 +23,10 @@ const variantStyles: Record<ToastVariant, string> = {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const nextIdRef = useRef(0);
 
   const showToast = useCallback((message: string, variant: ToastVariant = 'info') => {
-    const id = Date.now();
+    const id = ++nextIdRef.current;
     setToasts((current) => [...current, { id, message, variant }]);
     setTimeout(() => {
       setToasts((current) => current.filter((toast) => toast.id !== id));

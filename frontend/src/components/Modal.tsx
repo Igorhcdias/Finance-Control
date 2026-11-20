@@ -8,6 +8,7 @@ interface ModalProps {
   children: ReactNode;
   accessible?: boolean;
   dismissible?: boolean;
+  maxWidthClassName?: string;
 }
 
 /**
@@ -16,7 +17,15 @@ interface ModalProps {
  * reutilizável em qualquer contexto (form de categoria, confirmação de
  * exclusão, etc.) sem acoplamento a uma tela específica.
  */
-export function Modal({ isOpen, title, onClose, children, accessible = false, dismissible = true }: ModalProps) {
+export function Modal({
+  isOpen,
+  title,
+  onClose,
+  children,
+  accessible = false,
+  dismissible = true,
+  maxWidthClassName = 'max-w-md',
+}: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
@@ -84,7 +93,7 @@ export function Modal({ isOpen, title, onClose, children, accessible = false, di
         aria-modal={accessible ? true : undefined}
         aria-labelledby={accessible ? titleId : undefined}
         tabIndex={accessible ? -1 : undefined}
-        className={`w-full max-w-md rounded-xl bg-white p-6 shadow-xl ${accessible ? 'max-h-[calc(100dvh-2rem)] overflow-y-auto outline-none' : ''}`}
+        className={`w-full ${maxWidthClassName} rounded-xl bg-white p-6 shadow-xl ${accessible ? 'max-h-[calc(100dvh-2rem)] overflow-y-auto outline-none' : ''}`}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 id={titleId} className="text-lg font-semibold text-gray-900">{title}</h2>

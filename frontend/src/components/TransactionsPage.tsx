@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
-import { ArrowDownCircle, ArrowUpCircle, Pencil, Plus, Search, Scale, Trash2 } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Pencil, Plus, Search, Scale, Trash2, Upload } from 'lucide-react';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
 import { TransactionFormModal, TransactionFormData } from './TransactionFormModal';
+import { CsvImportModal } from './CsvImportModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Loading } from './Loading';
 import { MetricCard } from './MetricCard';
 import { PeriodFilter } from './dashboard/PeriodFilter';
 import { useDashboardData } from '../hooks/useDashboardData';
-import { Transaction, TransactionType } from '../types';
+import { CsvImportResponse, Transaction, TransactionType } from '../types';
 import { formatCurrency, formatDate } from '../utils/format';
+import { computeImportedPeriodAdjustment } from '../utils/csv';
 import { getDashboardPeriod, type DashboardPeriod } from '../utils/dashboard';
 import { useToast } from '../contexts/ToastContext';
 import { getApiErrorMessage } from '../services/api';
@@ -40,10 +42,11 @@ export function TransactionsPage() {
     endDate: period.endDate,
   });
   const { categories, createCategory } = useCategories();
-  const { summary, isLoading: isSummaryLoading, error: summaryError } = useDashboardData(period.startDate, period.endDate);
+  const { summary, isLoading: isSummaryLoading, error: summaryError, refresh: refreshSummary } = useDashboardData(period.startDate, period.endDate);
   const { showToast } = useToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -75,6 +78,7 @@ export function TransactionsPage() {
       } else {
         await createTransaction(data);
       }
+      refreshSummary();
     } catch (error) {
       showToast(getApiErrorMessage(error, 'Erro ao salvar transação'), 'error');
       throw error;
@@ -86,11 +90,35 @@ export function TransactionsPage() {
     setIsDeleting(true);
     try {
       await deleteTransaction(transactionToDelete.id);
+      refreshSummary();
       setTransactionToDelete(null);
     } catch (error) {
       showToast(getApiErrorMessage(error, 'Não foi possível excluir'), 'error');
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  async function handleCsvImported(result: CsvImportResponse, importedDates: string[]) {
+    const adjustedPeriod = computeImportedPeriodAdjustment(period, importedDates);
+    if (adjustedPeriod) {
+      setPeriod(adjustedPeriod);
+    } else if (page > 1) {
+      setPage(1);
+      refreshSummary();
+    } else {
+      await loadTransactions();
+      refreshSummary();
+    }
+
+    const countLabel = result.importedCount === 1 ? 'lançamento importado' : 'lançamentos importados';
+    const incomeLabel = result.incomeCount === 1 ? 'entrada' : 'entradas';
+    const expenseLabel = result.expenseCount === 1 ? 'saída' : 'saídas';
+    const baseMessage = `${result.importedCount} ${countLabel} (${result.incomeCount} ${incomeLabel} e ${result.expenseCount} ${expenseLabel}).`;
+    if (result.budgetWarnings.length > 0) {
+      showToast(`${baseMessage} ${result.budgetWarnings.join(' ')}`, 'warning');
+    } else {
+      showToast(baseMessage, 'success');
     }
   }
 
@@ -101,9 +129,14 @@ export function TransactionsPage() {
           <h1 className="text-2xl font-semibold text-gray-900">Lançamentos</h1>
           <p className="mt-1 text-sm text-gray-500">Acompanhe receitas e despesas em um só lugar.</p>
         </div>
-        <button type="button" onClick={openCreateForm} className="btn-primary min-h-11 w-full sm:w-auto">
-          <Plus size={18} /> Novo lançamento
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <button type="button" onClick={() => setIsCsvModalOpen(true)} className="btn-secondary min-h-11 w-full sm:w-auto">
+            <Upload size={18} /> Importar CSV
+          </button>
+          <button type="button" onClick={openCreateForm} className="btn-primary min-h-11 w-full sm:w-auto">
+            <Plus size={18} /> Novo lançamento
+          </button>
+        </div>
       </div>
 
       {isSummaryLoading ? (
@@ -266,6 +299,14 @@ export function TransactionsPage() {
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleSubmit}
         accessible
+      />
+
+      <CsvImportModal
+        isOpen={isCsvModalOpen}
+        categories={categories}
+        onClose={() => setIsCsvModalOpen(false)}
+        onCreateCategory={createCategory}
+        onImported={handleCsvImported}
       />
 
       <ConfirmDialog

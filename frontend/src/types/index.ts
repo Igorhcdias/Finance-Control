@@ -111,3 +111,69 @@ export interface MonthlyComparisonData {
   percentageChange: number | null;
   categories: CategoryComparisonItem[];
 }
+
+export type CsvSourceType = 'STATEMENT' | 'INVOICE';
+
+export interface CsvColumnMapping {
+  date: string | null;
+  description: string | null;
+  amount: string | null;
+  incomeAmount: string | null;
+  expenseAmount: string | null;
+  type: string | null;
+  category: string | null;
+  paymentMethod: string | null;
+}
+
+export interface CsvPreviewRow {
+  lineNumber: number;
+  date: string;
+  description: string;
+  amount: number;
+  type: TransactionType;
+  paymentMethod: PaymentMethod | null;
+  suggestedCategoryName: string | null;
+  categoryId: string | null;
+  isDuplicate: boolean;
+}
+
+export interface CsvPreviewError {
+  lineNumber: number;
+  rawText: string;
+  reason: string;
+}
+
+export interface CsvPreviewSummary {
+  totalRows: number;
+  incomeCount: number;
+  expenseCount: number;
+  incomeTotal: number;
+  expenseTotal: number;
+  duplicateCount: number;
+  errorCount: number;
+}
+
+export interface CsvPreviewResponse {
+  sourceType: CsvSourceType;
+  detectedDelimiter: string;
+  headers: string[];
+  detectedMapping: CsvColumnMapping;
+  rows: CsvPreviewRow[];
+  errors: CsvPreviewError[];
+  summary: CsvPreviewSummary;
+}
+
+export interface CsvPreviewRequest {
+  csvContent: string;
+  sourceType: CsvSourceType;
+  columnMapping?: Partial<CsvColumnMapping>;
+}
+
+export interface CsvImportResponse {
+  importedCount: number;
+  incomeCount: number;
+  expenseCount: number;
+  incomeTotal: number;
+  expenseTotal: number;
+  budgetWarnings: string[];
+}
